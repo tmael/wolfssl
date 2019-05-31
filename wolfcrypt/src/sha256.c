@@ -24,7 +24,7 @@
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
-
+#ifndef HAVE_DO178
 /*
  * SHA256 Build Options:
  * USE_SLOW_SHA256:            Reduces code size by not partially unrolling
@@ -42,7 +42,7 @@
     #define WOLFSSL_SHA256_BY_SPEC
 #endif
 
-
+#ifndef HAVE_DO178
 #if !defined(NO_SHA256) && !defined(WOLFSSL_ARMASM)
 
 #if defined(HAVE_FIPS) && \
@@ -1513,3 +1513,4 @@ int wc_Sha256GetFlags(wc_Sha256* sha256, word32* flags)
 #endif /* !WOLFSSL_TI_HASH */
 
 #endif /* NO_SHA256 */
+#endif /* !HAVE_DO178 */

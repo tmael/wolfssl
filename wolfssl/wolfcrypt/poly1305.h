@@ -48,11 +48,16 @@
 #define WC_HAS_GCC_4_4_64BIT
 #endif
 
+#ifndef HAVE_DO178
 #ifdef USE_INTEL_SPEEDUP
 #elif (defined(WC_HAS_SIZEOF_INT128_64BIT) || defined(WC_HAS_MSVC_64BIT) ||  \
        defined(WC_HAS_GCC_4_4_64BIT))
 #define POLY130564
 #else
+#define POLY130532
+#endif
+#else
+/* DO178 supports 32bit */
 #define POLY130532
 #endif
 

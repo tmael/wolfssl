@@ -9,6 +9,8 @@ src_libwolfssl_la_LIBADD = $(LIBM) $(LIB_ADD) $(LIB_STATIC_ADD)
 src_libwolfssl_la_CFLAGS = -DBUILDING_WOLFSSL $(AM_CFLAGS)
 src_libwolfssl_la_CPPFLAGS = -DBUILDING_WOLFSSL $(AM_CPPFLAGS)
 
+if !BUILD_DO178
+
 # install the packaged IPP libraries
 if BUILD_FAST_RSA
 
@@ -465,3 +467,28 @@ src_libwolfssl_la_SOURCES += src/sniffer.c
 endif
 
 endif # !BUILD_CRYPTONLY
+
+else
+
+src_libwolfssl_la_SOURCES += wolfcrypt/src/sha256_cert.c
+if BUILD_AES
+src_libwolfssl_la_SOURCES += wolfcrypt/src/aes_cert.c
+endif
+if BUILD_RSA
+src_libwolfssl_la_SOURCES += wolfcrypt/src/sp_int.c
+src_libwolfssl_la_SOURCES += wolfcrypt/src/sp_c32.c
+src_libwolfssl_la_SOURCES += wolfcrypt/src/random.c
+src_libwolfssl_la_SOURCES += wolfcrypt/src/rsa_cert.c
+src_libwolfssl_la_SOURCES += wolfcrypt/src/asn_cert.c
+src_libwolfssl_la_SOURCES += wolfcrypt/src/misc.c
+endif
+if BUILD_CHACHA
+src_libwolfssl_la_SOURCES += wolfcrypt/src/chacha_cert.c
+endif
+if BUILD_POLY1305
+src_libwolfssl_la_SOURCES += wolfcrypt/src/poly1305_cert.c
+endif
+if BUILD_POLY1305
+src_libwolfssl_la_SOURCES += wolfcrypt/src/chacha20_poly1305.c
+endif
+endif # BUILD_DO178

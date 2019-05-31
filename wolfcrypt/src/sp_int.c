@@ -395,7 +395,7 @@ int sp_iszero(sp_int* a)
 }
 #endif
 
-#if !defined(WOLFSSL_RSA_VERIFY_ONLY) || (!defined(NO_DH) || defined(HAVE_ECC))
+#if !defined(NO_DH) || defined(HAVE_ECC) || !defined(NO_RSA)
 /* Recalculate the number of digits used.
  *
  * a  SP integer.
