@@ -58,7 +58,9 @@ static void cc310_enable(void)
     /* Enable the CC310 HW/IQ once*/
 
     NRF_CRYPTOCELL->ENABLE = 1;
+#ifndef FREERTOS
     NVIC_EnableIRQ(CRYPTOCELL_IRQn);
+#endif
 }
 
 static void cc310_disable(void)
@@ -68,7 +70,9 @@ static void cc310_disable(void)
     /* Disable HW/IRQ if no more users */
     if (cc310_enableCount == 0) {
         NRF_CRYPTOCELL->ENABLE = 0;
+#ifndef FREERTOS
         NVIC_DisableIRQ(CRYPTOCELL_IRQn);
+#endif
     }
 }
 
