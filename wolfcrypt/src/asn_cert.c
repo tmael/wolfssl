@@ -67,7 +67,6 @@ WOLFSSL_LOCAL int GetLength(const byte* input, word32* inOutIdx, int* len,
     return GetLength_ex(input, inOutIdx, len, maxIdx, 1);
 }
 
-
 /* give option to check length value found against index. 1 to check 0 to not */
 WOLFSSL_LOCAL int GetLength_ex(const byte* input, word32* inOutIdx, int* len,
                            word32 maxIdx, int check)
@@ -247,6 +246,27 @@ static int GetASNInt(const byte* input, word32* inOutIdx, int* len,
 
     return 0;
 }
+
+#if (!defined(WOLFSSL_KEY_GEN) && !defined(OPENSSL_EXTRA) && defined(RSA_LOW_MEM)) \
+    || defined(WOLFSSL_RSA_PUBLIC_ONLY)
+#if !defined(NO_RSA) && !defined(HAVE_USER_RSA)
+static int SkipInt(const byte* input, word32* inOutIdx, word32 maxIdx)
+{
+    word32 idx = *inOutIdx;
+    int    ret;
+    int    length;
+
+    ret = GetASNInt(input, &idx, &length, maxIdx);
+    if (ret != 0)
+        return ret;
+
+    *inOutIdx = idx + length;
+
+    return 0;
+}
+#endif
+#endif
+
 
 #if !defined(NO_DSA) && !defined(NO_SHA)
 static char sigSha1wDsaName[] = "SHAwDSA";
