@@ -67,6 +67,7 @@ AES      test passed!
 AES192   test passed!
 AES256   test passed!
 AES-GCM  test passed!
+RSA NOPAD test passed!
 RSA      test passed!
 Test complete
 */
@@ -74,6 +75,7 @@ Test complete
 #ifndef HAVE_DO178
     #define HAVE_DO178
 #endif
+
 #define WOLFCRYPT_ONLY
 #undef  SINGLE_THREADED
 #define SINGLE_THREADED
@@ -123,33 +125,28 @@ Test complete
 #undef  WC_RSA_BLINDING
 #define WC_RSA_BLINDING
 
-#ifdef WOLFSSL_HAVE_SP_RSA
-    #if 1
-        #define WOLFSSL_SP_MATH
-    #endif
+#define WOLFSSL_SP_MATH
 
-    /* sp_int.h determines which module to include and sp_c64.c is used by default*/
-    #if 1
-       /* includes sp_c32.c instead of the default sp_c64.c
-         avoid build error 'asm operand has impossible constraints'
-        */
-       #define SP_WORD_SIZE 32
-    #endif
-
-    #if 1
-        /* RSA specific code used in one place */
-        #define WOLFSSL_SP_RSA
-    #endif
-
-#endif
+/* includes sp_c32.c instead of the default sp_c64.c, see sp_int.h */
+#define SP_WORD_SIZE 32
+/* RSA specific code used in one place */
+#define WOLFSSL_SP_RSA
 
 /* Use inline to not use heap memory */
 #define WOLFSSL_RSA_VERIFY_INLINE
-#define WOLFSSL_RSA_VERIFY_ONLY
 
 #if 0
-/* Optional settings */
+/*  Optional settings */
     #define NO_RSA_BOUNDS_CHECK
+#endif
+
+/* padding options*/
+#if 0
+/* PKCSV15 and OAEP is included in the default build
+   The public RSA wc_* functions uses WC_RSA_PKCSV15_PAD as default  */
+#define WC_NO_RSA_OAEP       /* Disable RSA OAEP padding */
+#define WC_RSA_PSS           /* Adds RSA padding to the build */
+#define WC_RSA_NO_PADDING    /* Adds RSA no padding to the build */
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -168,11 +165,16 @@ Test complete
 #define NO_WOLFSSL_MEMORY
 #define WOLFSSL_NO_MALLOC
 
+/* ------------------------------------------------------------------------- */
+/* Test (test.c) application, non-cert */
+/* ------------------------------------------------------------------------- */
 #if 1
     /* define for test.c application */
     #define WOLFSSL_PUBLIC_MP
-    /* Must include logging.c to use debugging */
-    /* #define DEBUG_WOLFSSL */
+    /* test PSS and no padding */
+    #define WC_RSA_PSS           /* Adds RSA padding to the build */
+    #define WC_RSA_NO_PADDING    /* Adds RSA no padding to the build */
+    /* Must include logging.c to use verbose debugging functionality */
 #endif
 
 /* ------------------------------------------------------------------------- */

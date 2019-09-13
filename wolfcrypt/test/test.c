@@ -10127,6 +10127,7 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
     int              k, l;
 #endif
     byte*            plain;
+#ifndef HAVE_DO178
     int              mgf[]   = {
 #ifndef NO_SHA
                                  WC_MGF1SHA1,
@@ -10157,6 +10158,10 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
                                  WC_HASH_TYPE_SHA512,
 #endif
                                };
+#else
+    int              mgf[]   = {WC_MGF1SHA256};
+    enum wc_HashType hash[]  = {WC_HASH_TYPE_SHA256};
+#endif /* !HAVE_DO178 */
 
     DECLARE_VAR_INIT(in, byte, inLen, inStr, HEAP_HINT);
     DECLARE_VAR(out, byte, RSA_TEST_BYTES, HEAP_HINT);
@@ -10164,12 +10169,19 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
 
     /* Test all combinations of hash and MGF. */
     for (j = 0; j < (int)(sizeof(hash)/sizeof(*hash)); j++) {
+#ifndef HAVE_DO178
         /* Calculate hash of message. */
         ret = wc_Hash(hash[j], in, inLen, digest, sizeof(digest));
+#else
+        ret = wc_Sha256Hash(in, inLen, digest);
+#endif
         if (ret != 0)
             ERROR_OUT(-6817, exit_rsa_pss);
+#ifndef HAVE_DO178
         digestSz = wc_HashGetDigestSize(hash[j]);
-
+#else
+        digestSz = WC_SHA256_DIGEST_SIZE;
+#endif
         for (i = 0; i < (int)(sizeof(mgf)/sizeof(*mgf)); i++) {
             outSz = RSA_TEST_BYTES;
             do {
@@ -10242,7 +10254,12 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
     }
 
     /* Test that a salt length of zero works. */
-    digestSz = wc_HashGetDigestSize(hash[0]);
+#ifndef HAVE_DO178
+        digestSz = wc_HashGetDigestSize(hash[0]);
+#else
+        digestSz = WC_SHA256_DIGEST_SIZE;
+#endif
+
     outSz = RSA_TEST_BYTES;
     do {
     #if defined(WOLFSSL_ASYNC_CRYPT)
@@ -10319,8 +10336,14 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
     if (ret != 0)
         ERROR_OUT(-6826, exit_rsa_pss);
 
+#ifndef HAVE_DO178
+
     /* Test bad salt lengths in various APIs. */
     digestSz = wc_HashGetDigestSize(hash[0]);
+#else
+    digestSz = WC_SHA256_DIGEST_SIZE;
+#endif
+
     outSz = RSA_TEST_BYTES;
     do {
     #if defined(WOLFSSL_ASYNC_CRYPT)
@@ -10411,7 +10434,9 @@ int rsa_no_pad_test(void)
 {
     WC_RNG rng;
     RsaKey key;
+#ifdef WOLFSSL_SMALL_STACK
     byte*  tmp = NULL;
+#endif
     size_t bytes;
     int    ret;
     word32 inLen   = 0;
@@ -10439,8 +10464,11 @@ int rsa_no_pad_test(void)
 #else
 	bytes = FOURK_BUF;
 #endif
-
+#ifdef WOLFSSL_SMALL_STACK
     tmp = (byte*)XMALLOC(bytes, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+#else
+    byte tmp[bytes];
+#endif
     if (tmp == NULL
     #ifdef WOLFSSL_ASYNC_CRYPT
         || out == NULL || plain == NULL
@@ -10609,7 +10637,10 @@ int rsa_no_pad_test(void)
     ret = 0;
 
 exit_rsa_nopadding:
-    XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+#ifdef WOLFSSL_SMALL_STACK
+    if (tmp)
+        XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
     FREE_VAR(out, HEAP_HINT);
     FREE_VAR(plain, HEAP_HINT);
     wc_FreeRsaKey(&key);
