@@ -24,7 +24,6 @@
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
-#ifndef HAVE_DO178
 /*
  * SHA256 Build Options:
  * USE_SLOW_SHA256:            Reduces code size by not partially unrolling
