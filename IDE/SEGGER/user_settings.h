@@ -25,20 +25,14 @@ DO-178C wolfCrypt Algorithms:
 
 SHA256
 
-RSA KeyGen 2048
 RSA Sign and Verify
     Signature Type: PKCS 1.5, PKCSPSS, OAEP
     Modulo: 2048, 3072
     Hash Algorithm: SHA2-256
 
-AES-GCM Decrypt and Encrypt
+AES-GCM and AES-CBC Decrypt and Encrypt
     IV Generation: Internal and external
     Key Length: 128, 192, 256
-
-AES modes
-    AES-CBC
-        Direction: Decrypt, Encrypt
-        Key Length: 128, 192, 256
 
 ChaCha20
 Poly1305
@@ -188,6 +182,7 @@ Test complete
 #undef  WOLFSSL_SHA224
 /* remove SHA512*/
 #undef  WOLFSSL_SHA3
+#undef  WOLFSSL_SHA512
 
 #define NO_CODING
 #define NO_ERROR_STRINGS

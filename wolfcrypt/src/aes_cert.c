@@ -35,10 +35,6 @@
 #include <wolfssl/wolfcrypt/aes.h>
 #include <wolfssl/wolfcrypt/cpuid.h>
 
-#ifdef WOLF_CRYPTO_CB
-    #include <wolfssl/wolfcrypt/cryptocb.h>
-#endif
-
 
 /* fips wrapper calls, user can call direct */
 #if defined(HAVE_FIPS) && \
