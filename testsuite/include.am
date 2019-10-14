@@ -2,7 +2,9 @@
 # included from Top Level Makefile.am
 # All paths should be given relative to the root
 
-
+if BUILD_DO178
+# no support
+else
 if BUILD_TESTS
 check_PROGRAMS += testsuite/testsuite.test
 noinst_PROGRAMS += testsuite/testsuite.test
@@ -24,3 +26,5 @@ EXTRA_DIST += testsuite/testsuite.vcxproj
 EXTRA_DIST += input
 EXTRA_DIST += quit
 DISTCLEANFILES+= testsuite/.libs/testsuite.test
+
+endif # !BUILD_DO178

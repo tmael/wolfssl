@@ -23,7 +23,7 @@
  * Based off the public domain implementations by Andrew Moon
  * and Daniel J. Bernstein
  */
-
+#ifndef HAVE_DO178
 
 #ifdef HAVE_CONFIG_H
     #include <config.h>
@@ -821,3 +821,5 @@ int wc_Poly1305_MAC(Poly1305* ctx, byte* additional, word32 addSz,
 
 }
 #endif /* HAVE_POLY1305 */
+#endif /* !HAVE_DO178 */
+

@@ -1,0 +1,68 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="wolfcrypt" target="8" version="2">
+  <project Name="wolfcrypt">
+    <configuration
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
+      arm_linker_heap_size="8192"
+      arm_linker_process_stack_size="0"
+      arm_linker_stack_size="8192"
+      arm_linker_variant="SEGGER"
+      arm_simulator_memory_simulation_parameter="RX 00000000,00100000,FFFFFFFF;RWX 20000000,00040000,CDCDCDCD"
+      arm_target_device_name="nRF52840_xxAA"
+      arm_target_interface_type="SWD"
+      debug_target_connection="Simulator"
+      link_linker_script_file="$(ProjectDir)/SEGGER_Flash.icf"
+      linker_output_format="hex"
+      linker_section_placements_segments="FLASH RX 0x00000000 0x00100000;RAM RWX 0x20000000 0x00040000"
+      project_directory=""
+      project_type="Executable" />
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="../../../../wolfcrypt/src/aes_cert.c" />
+      <file file_name="../../../../wolfcrypt/src/chacha20_poly1305.c" />
+      <file file_name="../../../../wolfcrypt/src/random.c" />
+      <file file_name="../../../../wolfcrypt/src/rsa_cert.c" />
+      <file file_name="../../../../wolfcrypt/src/sp_c32.c" />
+      <file file_name="../../../../wolfcrypt/src/sp_int.c" />
+      <file file_name="../../../../wolfcrypt/src/sha256_cert.c" />
+      <file file_name="../../../../wolfcrypt/src/chacha_cert.c" />
+      <file file_name="../../../../wolfcrypt/src/poly1305_cert.c" />
+      <file file_name="../../../../wolfcrypt/src/misc.c" />
+      <file file_name="../../../../wolfcrypt/test/test.c" />
+      <file file_name="../../../../wolfcrypt/src/asn_cert.c" />
+    </folder>
+    <folder Name="RTT Files">
+      <file file_name="SEGGER_RTT.c" />
+      <file file_name="SEGGER_RTT.h" />
+      <file file_name="SEGGER_RTT_Conf.h" />
+      <file file_name="SEGGER_RTT_Syscalls_SES.c" />
+    </folder>
+    <folder Name="System Files">
+      <file file_name="Cortex_M_Startup.s" />
+      <file file_name="HardFaultHandler.S" />
+      <file file_name="SEGGER_HardFaultHandler.c" />
+      <file file_name="SEGGER_THUMB_Startup.s" />
+    </folder>
+  </project>
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_optimization_level="None" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="None"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 1" />
+  <configuration
+    Name="Common"
+    arm_linker_heap_size="8098"
+    c_preprocessor_definitions="WOLFSSL_USER_SETTINGS"
+    c_user_include_directories=".;../../../.." />
+</solution>

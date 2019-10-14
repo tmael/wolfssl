@@ -42,8 +42,10 @@
 #include <wolfcrypt/src/misc.c>
 #endif
 
+#ifndef HAVE_DO178
 #ifdef CHACHA_AEAD_TEST
 #include <stdio.h>
+#endif
 #endif
 
 #define CHACHA20_POLY1305_AEAD_INITIAL_COUNTER  0

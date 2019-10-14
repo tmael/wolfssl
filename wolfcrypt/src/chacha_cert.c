@@ -1,4 +1,4 @@
-/* chacha.c
+/* chacha_cert.c
  *
  * Copyright (C) 2006-2019 wolfSSL Inc.
  *
@@ -19,26 +19,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-/*
- *  based from
- *  chacha-ref.c version 20080118
- *  D. J. Bernstein
- *  Public domain.
- */
-
-#ifndef HAVE_DO178
-
-#ifdef WOLFSSL_ARMASM
-    /* implementation is located in wolfcrypt/src/port/arm/armv8-chacha.c */
-
-#else
-
 #ifdef HAVE_CONFIG_H
     #include <config.h>
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
 
+#ifdef HAVE_DO178
 #ifdef HAVE_CHACHA
 
 #include <wolfssl/wolfcrypt/chacha.h>
@@ -50,35 +37,6 @@
 #else
     #define WOLFSSL_MISC_INCLUDED
     #include <wolfcrypt/src/misc.c>
-#endif
-
-#ifdef CHACHA_AEAD_TEST
-    #include <stdio.h>
-#endif
-
-#ifdef USE_INTEL_CHACHA_SPEEDUP
-    #include <emmintrin.h>
-    #include <immintrin.h>
-
-    #if defined(__GNUC__) && ((__GNUC__ < 4) || \
-                              (__GNUC__ == 4 && __GNUC_MINOR__ <= 8))
-        #undef  NO_AVX2_SUPPORT
-        #define NO_AVX2_SUPPORT
-    #endif
-    #if defined(__clang__) && ((__clang_major__ < 3) || \
-                               (__clang_major__ == 3 && __clang_minor__ <= 5))
-        #undef  NO_AVX2_SUPPORT
-        #define NO_AVX2_SUPPORT
-    #elif defined(__clang__) && defined(NO_AVX2_SUPPORT)
-        #undef NO_AVX2_SUPPORT
-    #endif
-
-    #ifndef NO_AVX2_SUPPORT
-        #define HAVE_INTEL_AVX2
-    #endif
-
-    static int cpuidFlagsSet = 0;
-    static int cpuidFlags = 0;
 #endif
 
 #ifdef BIG_ENDIAN_ORDER
@@ -113,15 +71,6 @@
 int wc_Chacha_SetIV(ChaCha* ctx, const byte* inIv, word32 counter)
 {
     word32 temp[CHACHA_IV_WORDS];/* used for alignment of memory */
-
-#ifdef CHACHA_AEAD_TEST
-    word32 i;
-    printf("NONCE : ");
-    for (i = 0; i < CHACHA_IV_BYTES; i++) {
-        printf("%02x", inIv[i]);
-    }
-    printf("\n\n");
-#endif
 
     if (ctx == NULL)
         return BAD_FUNC_ARG;
@@ -171,17 +120,6 @@ int wc_Chacha_SetKey(ChaCha* ctx, const byte* key, word32 keySz)
 #else
     k = key;
 #endif /* XSTREAM_ALIGN */
-
-#ifdef CHACHA_AEAD_TEST
-    word32 i;
-    printf("ChaCha key used :\n");
-    for (i = 0; i < keySz; i++) {
-        printf("%02x", key[i]);
-        if ((i + 1) % 8 == 0)
-           printf("\n");
-    }
-    printf("\n\n");
-#endif
 
     ctx->X[4] = U8TO32_LITTLE(k +  0);
     ctx->X[5] = U8TO32_LITTLE(k +  4);
@@ -239,22 +177,6 @@ static WC_INLINE void wc_Chacha_wordtobyte(word32 output[CHACHA_CHUNK_WORDS],
     }
 }
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
-
-extern void chacha_encrypt_x64(ChaCha* ctx, const byte* m, byte* c,
-                               word32 bytes);
-extern void chacha_encrypt_avx1(ChaCha* ctx, const byte* m, byte* c,
-                                word32 bytes);
-extern void chacha_encrypt_avx2(ChaCha* ctx, const byte* m, byte* c,
-                                word32 bytes);
-
-#ifdef __cplusplus
-    }  /* extern "C" */
-#endif
-
-
 /**
   * Encrypt a stream of bytes
   */
@@ -294,35 +216,10 @@ int wc_Chacha_Process(ChaCha* ctx, byte* output, const byte* input,
     if (ctx == NULL)
         return BAD_FUNC_ARG;
 
-#ifdef USE_INTEL_CHACHA_SPEEDUP
-    if (!cpuidFlagsSet) {
-        cpuidFlags = cpuid_get_flags();
-        cpuidFlagsSet = 1;
-    }
-
-    #ifdef HAVE_INTEL_AVX2
-    if (IS_INTEL_AVX2(cpuidFlags)) {
-        chacha_encrypt_avx2(ctx, input, output, msglen);
-        return 0;
-    }
-    #endif
-    if (IS_INTEL_AVX1(cpuidFlags)) {
-        chacha_encrypt_avx1(ctx, input, output, msglen);
-        return 0;
-    }
-    else {
-        chacha_encrypt_x64(ctx, input, output, msglen);
-        return 0;
-    }
-#endif
     wc_Chacha_encrypt_bytes(ctx, input, output, msglen);
 
     return 0;
 }
 
 #endif /* HAVE_CHACHA*/
-
-#endif /* WOLFSSL_ARMASM */
-#endif /* !HAVE_DO178 */
-
-
+#endif /* HAVE_DO178 */

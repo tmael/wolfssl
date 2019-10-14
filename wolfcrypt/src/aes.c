@@ -27,6 +27,7 @@
 #include <wolfssl/wolfcrypt/settings.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
+#ifndef HAVE_DO178
 #if !defined(NO_AES)
 
 /* Tip: Locate the software cipher modes by searching for "Software AES" */
@@ -7693,3 +7694,4 @@ int wc_AesXtsDecrypt(XtsAes* xaes, byte* out, const byte* in, word32 sz,
 
 #endif /* HAVE_FIPS */
 #endif /* !NO_AES */
+#endif /* !HAVE_DO178 */
