@@ -89,22 +89,7 @@ ECC Curve Sizes:
 /* internal ECC states */
 enum {
     ECC_STATE_NONE = 0,
-
-    ECC_STATE_SHARED_SEC_GEN,
-    ECC_STATE_SHARED_SEC_RES,
-
-    ECC_STATE_SIGN_DO,
-    ECC_STATE_SIGN_ENCODE,
-
-    ECC_STATE_VERIFY_DECODE,
-    ECC_STATE_VERIFY_DO,
-    ECC_STATE_VERIFY_RES,
 };
-
-
-/* map
-   ptmul -> mulmod
-*/
 
 /* 256-bit curve on by default whether user curves or not */
 #if !defined(NO_ECC256)  || defined(HAVE_ALL_CURVES)
@@ -623,147 +608,6 @@ int wc_ecc_get_curve_id_from_name(const char* curveName)
     return ecc_sets[curve_idx].id;
 }
 
-/* Compares a curve parameter (hex, from ecc_sets[]) to given input
- * parameter for equality.
- * encType is WC_TYPE_UNSIGNED_BIN or WC_TYPE_HEX_STR
- * Returns MP_EQ on success, negative on error */
-static int wc_ecc_cmp_param(const char* curveParam,
-                            const byte* param, word32 paramSz, int encType)
-{
-    int err = MP_OKAY;
-    mp_int  a[1], b[1];
-
-    if (param == NULL || curveParam == NULL)
-        return BAD_FUNC_ARG;
-
-    if (encType == WC_TYPE_HEX_STR)
-        return XSTRNCMP(curveParam, (char*) param, paramSz);
-
-    if ((err = mp_init_multi(a, b, NULL, NULL, NULL, NULL)) != MP_OKAY) {
-        return err;
-    }
-
-    if (err == MP_OKAY) {
-        err = mp_read_unsigned_bin(a, param, paramSz);
-    }
-    if (err == MP_OKAY)
-        err = mp_read_radix(b, curveParam, MP_RADIX_HEX);
-
-    if (err == MP_OKAY) {
-        if (mp_cmp(a, b) != MP_EQ) {
-            err = -1;
-        } else {
-            err = MP_EQ;
-        }
-    }
-
-    mp_clear(a);
-    mp_clear(b);
-
-    return err;
-}
-
-/* Returns the curve id in ecc_sets[] that corresponds to a given set of
- * curve parameters.
- *
- * fieldSize  the field size in bits
- * prime      prime of the finite field
- * primeSz    size of prime in octets
- * Af         first coefficient a of the curve
- * AfSz       size of Af in octets
- * Bf         second coefficient b of the curve
- * BfSz       size of Bf in octets
- * order      curve order
- * orderSz    size of curve in octets
- * Gx         affine x coordinate of base point
- * GxSz       size of Gx in octets
- * Gy         affine y coordinate of base point
- * GySz       size of Gy in octets
- * cofactor   curve cofactor
- *
- * return curve id, from ecc_sets[] on success, negative on error
- */
-int wc_ecc_get_curve_id_from_params(int fieldSize,
-        const byte* prime, word32 primeSz, const byte* Af, word32 AfSz,
-        const byte* Bf, word32 BfSz, const byte* order, word32 orderSz,
-        const byte* Gx, word32 GxSz, const byte* Gy, word32 GySz, int cofactor)
-{
-    int idx;
-    int curveSz;
-
-    if (prime == NULL || Af == NULL || Bf == NULL || order == NULL ||
-        Gx == NULL || Gy == NULL)
-        return BAD_FUNC_ARG;
-
-    curveSz = (fieldSize + 1) / 8;    /* round up */
-
-    for (idx = 0; ecc_sets[idx].size != 0; idx++) {
-        if (curveSz == ecc_sets[idx].size) {
-            if ((wc_ecc_cmp_param(ecc_sets[idx].prime, prime,
-                            primeSz, WC_TYPE_UNSIGNED_BIN) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].Af, Af, AfSz,
-                                  WC_TYPE_UNSIGNED_BIN) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].Bf, Bf, BfSz,
-                                  WC_TYPE_UNSIGNED_BIN) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].order, order,
-                                  orderSz, WC_TYPE_UNSIGNED_BIN) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].Gx, Gx, GxSz,
-                                  WC_TYPE_UNSIGNED_BIN) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].Gy, Gy, GySz,
-                                  WC_TYPE_UNSIGNED_BIN) == MP_EQ) &&
-                (cofactor == ecc_sets[idx].cofactor)) {
-                    break;
-            }
-        }
-    }
-
-    if (ecc_sets[idx].size == 0)
-        return ECC_CURVE_INVALID;
-
-    return ecc_sets[idx].id;
-}
-
-/* Returns the curve id in ecc_sets[] that corresponds
- * to a given domain parameters pointer.
- *
- * dp   domain parameters pointer
- *
- * return curve id, from ecc_sets[] on success, negative on error
- */
-int wc_ecc_get_curve_id_from_dp_params(const ecc_set_type* dp)
-{
-    int idx;
-
-    if (dp == NULL || dp->prime == NULL ||  dp->Af == NULL ||
-        dp->Bf == NULL || dp->order == NULL || dp->Gx == NULL || dp->Gy == NULL)
-        return BAD_FUNC_ARG;
-
-    for (idx = 0; ecc_sets[idx].size != 0; idx++) {
-        if (dp->size == ecc_sets[idx].size) {
-            if ((wc_ecc_cmp_param(ecc_sets[idx].prime, (const byte*)dp->prime,
-                    (word32)XSTRLEN(dp->prime), WC_TYPE_HEX_STR) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].Af, (const byte*)dp->Af,
-                    (word32)XSTRLEN(dp->Af),WC_TYPE_HEX_STR) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].Bf, (const byte*)dp->Bf,
-                    (word32)XSTRLEN(dp->Bf),WC_TYPE_HEX_STR) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].order, (const byte*)dp->order,
-                    (word32)XSTRLEN(dp->order),WC_TYPE_HEX_STR) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].Gx, (const byte*)dp->Gx,
-                    (word32)XSTRLEN(dp->Gx),WC_TYPE_HEX_STR) == MP_EQ) &&
-                (wc_ecc_cmp_param(ecc_sets[idx].Gy, (const byte*)dp->Gy,
-                    (word32)XSTRLEN(dp->Gy),WC_TYPE_HEX_STR) == MP_EQ) &&
-                (dp->cofactor == ecc_sets[idx].cofactor)) {
-                    break;
-            }
-        }
-    }
-
-    if (ecc_sets[idx].size == 0)
-        return ECC_CURVE_INVALID;
-
-    return ecc_sets[idx].id;
-}
-
 /* Returns the curve id that corresponds to a given OID,
  * as listed in ecc_sets[] of ecc.c.
  *
@@ -931,34 +775,7 @@ int wc_ecc_shared_secret_ex(ecc_key* private_key, ecc_point* point,
     if (wc_ecc_is_valid_idx(private_key->idx) == 0)
         return ECC_BAD_ARG_E;
 
-    switch(private_key->state) {
-        case ECC_STATE_NONE:
-        case ECC_STATE_SHARED_SEC_GEN:
-            private_key->state = ECC_STATE_SHARED_SEC_GEN;
-
-            err = wc_ecc_shared_secret_gen(private_key, point, out, outlen);
-            if (err < 0) {
-                break;
-            }
-            FALL_THROUGH;
-
-        case ECC_STATE_SHARED_SEC_RES:
-            private_key->state = ECC_STATE_SHARED_SEC_RES;
-            err = 0;
-            break;
-
-        default:
-            err = BAD_STATE_E;
-    } /* switch */
-
-    /* if async pending then return and skip done cleanup below */
-    if (err == WC_PENDING_E) {
-        private_key->state++;
-        return err;
-    }
-
-    /* cleanup */
-    private_key->state = ECC_STATE_NONE;
+    err = wc_ecc_shared_secret_gen(private_key, point, out, outlen);
 
     return err;
 }
@@ -984,13 +801,6 @@ int wc_ecc_point_is_at_infinity(ecc_point* p)
 
     return 0;
 }
-
-static WC_INLINE void wc_ecc_reset(ecc_key* key)
-{
-    /* make sure required key variables are reset */
-    key->state = ECC_STATE_NONE;
-}
-
 
 /* create the public ECC key from a private key
  *
@@ -1103,9 +913,6 @@ int wc_ecc_make_key_ex(WC_RNG* rng, int keysize, ecc_key* key, int curve_id)
     if (key == NULL || rng == NULL) {
         return BAD_FUNC_ARG;
     }
-
-    /* make sure required variables are reset */
-    wc_ecc_reset(key);
 
     err = wc_ecc_set_curve(key, keysize, curve_id);
     if (err != 0) {
@@ -1343,55 +1150,22 @@ int wc_ecc_verify_hash(const byte* sig, word32 siglen, const byte* hash,
     XMEMSET(r, 0, sizeof(mp_int));
     XMEMSET(s, 0, sizeof(mp_int));
 
-    switch (key->state) {
-        case ECC_STATE_NONE:
-        case ECC_STATE_VERIFY_DECODE:
-            key->state = ECC_STATE_VERIFY_DECODE;
+    /* default to invalid signature */
+    *res = 0;
 
-            /* default to invalid signature */
-            *res = 0;
+    /* Note, DecodeECC_DSA_Sig() calls mp_init() on r and s.
+     * If either of those don't allocate correctly, none of
+     * the rest of this function will execute, and everything
+     * gets cleaned up at the end. */
+    /* decode DSA header */
+    err = DecodeECC_DSA_Sig(sig, siglen, r, s);
 
-            /* Note, DecodeECC_DSA_Sig() calls mp_init() on r and s.
-             * If either of those don't allocate correctly, none of
-             * the rest of this function will execute, and everything
-             * gets cleaned up at the end. */
-            /* decode DSA header */
-            err = DecodeECC_DSA_Sig(sig, siglen, r, s);
-            if (err < 0) {
-                break;
-            }
-            FALL_THROUGH;
+    if (err == MP_OKAY)
+        err = wc_ecc_verify_hash_ex(r, s, hash, hashlen, res, key);
 
-        case ECC_STATE_VERIFY_DO:
-            key->state = ECC_STATE_VERIFY_DO;
-
-            err = wc_ecc_verify_hash_ex(r, s, hash, hashlen, res, key);
-
-            /* done with R/S */
-            mp_clear(r);
-            mp_clear(s);
-
-            if (err < 0) {
-                break;
-            }
-            FALL_THROUGH;
-
-        case ECC_STATE_VERIFY_RES:
-            key->state = ECC_STATE_VERIFY_RES;
-            err = 0;
-            break;
-
-        default:
-            err = BAD_STATE_E;
-    }
-
-    /* if async pending then return and skip done cleanup below */
-    if (err == WC_PENDING_E) {
-        key->state++;
-        return err;
-    }
-
-    key->state = ECC_STATE_NONE;
+    /* done with R/S */
+    mp_clear(r);
+    mp_clear(s);
 
     return err;
 }
@@ -1690,9 +1464,6 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
         return ECC_BAD_ARG_E;
     }
 
-    /* make sure required variables are reset */
-    wc_ecc_reset(key);
-
     /* init key */
      err = mp_init_multi(&key->k,
                     key->pubkey.x, key->pubkey.y, key->pubkey.z, NULL, NULL);
@@ -1892,10 +1663,6 @@ int wc_ecc_import_private_key_ex(const byte* priv, word32 privSz,
         key->type = ECC_PRIVATEKEY;
     }
     else {
-        /* make sure required variables are reset */
-        wc_ecc_reset(key);
-
-        /* set key size */
         ret = wc_ecc_set_curve(key, privSz, curve_id);
         key->type = ECC_PRIVATEKEY_ONLY;
     }
@@ -2071,9 +1838,6 @@ static int wc_ecc_import_raw_private(ecc_key* key, const char* qx,
     if (key == NULL || qx == NULL || qy == NULL) {
         return BAD_FUNC_ARG;
     }
-
-    /* make sure required variables are reset */
-    wc_ecc_reset(key);
 
     /* set curve type and index */
     err = wc_ecc_set_curve(key, 0, curve_id);
