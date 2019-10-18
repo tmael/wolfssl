@@ -622,6 +622,25 @@ initDefaultName();
     else
         test_pass("SHA-256  test passed!\n");
 #endif
+#ifdef HAVE_ECC
+    if ( (ret = ecc_test()) != 0)
+        return err_sys("ECC      test failed!\n", ret);
+    else
+        test_pass("ECC      test passed!\n");
+    #if defined(HAVE_ECC_ENCRYPT) && defined(WOLFSSL_AES_128)
+        if ( (ret = ecc_encrypt_test()) != 0)
+            return err_sys("ECC Enc  test failed!\n", ret);
+        else
+            test_pass("ECC Enc  test passed!\n");
+    #endif
+    #ifdef USE_CERT_BUFFERS_256
+        if ( (ret = ecc_test_buffers()) != 0)
+            return err_sys("ECC buffer test failed!\n", ret);
+        else
+            test_pass("ECC buffer test passed!\n");
+    #endif
+#endif
+
 #ifndef HAVE_DO178
 #ifdef WOLFSSL_SHA384
     if ( (ret = sha384_test()) != 0)
@@ -939,6 +958,7 @@ initDefaultName();
         test_pass("OPENSSL (EVP Sign/Verify) passed!\n");
 
 #endif
+#endif /* !HAVE_DO178*/
 
 #ifdef HAVE_ECC
     if ( (ret = ecc_test()) != 0)
@@ -959,6 +979,7 @@ initDefaultName();
     #endif
 #endif
 
+#ifndef HAVE_DO178
 #if !defined(NO_ASN_TIME) && !defined(NO_RSA) && defined(WOLFSSL_TEST_CERT) && \
     !defined(NO_FILESYSTEM)
     if ( (ret = cert_test()) != 0)
@@ -15799,7 +15820,7 @@ int x963kdf_test(void)
 }
 
 #endif /* HAVE_X963_KDF */
-
+#endif /* !HAVE_DO178 */
 
 #ifdef HAVE_ECC
 
@@ -16222,8 +16243,13 @@ done:
 static int ecc_test_make_pub(WC_RNG* rng)
 {
     ecc_key key;
+#ifdef WOLFSSL_SMALL_STACK
     unsigned char* exportBuf = NULL;
     unsigned char* tmp = NULL;
+#else
+    byte exportBuf[FOURK_BUF] = {0};
+    byte tmp[FOURK_BUF] = {0};
+#endif
     unsigned char msg[] = "test wolfSSL ECC public gen";
     word32 x, tmpSz;
     int ret = 0;
@@ -16239,7 +16265,7 @@ static int ecc_test_make_pub(WC_RNG* rng)
 #endif
 
     wc_ecc_init_ex(&key, HEAP_HINT, devId);
-
+#ifdef WOLFSSL_SMALL_STACK
     tmp = (byte*)XMALLOC(FOURK_BUF, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     if (tmp == NULL) {
         return -8311;
@@ -16249,6 +16275,7 @@ static int ecc_test_make_pub(WC_RNG* rng)
         XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
         return -8312;
     }
+#endif 
 
 #ifdef USE_CERT_BUFFERS_256
     XMEMCPY(tmp, ecc_key_der_256, (size_t)sizeof_ecc_key_der_256);
@@ -16431,10 +16458,10 @@ static int ecc_test_make_pub(WC_RNG* rng)
     ret = 0;
 
 done:
-
+#ifdef WOLFSSL_SMALL_STACK
     XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(exportBuf, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-
+#endif 
     wc_ecc_del_point_h(pubPoint, HEAP_HINT);
     wc_ecc_free(&key);
 
@@ -20367,6 +20394,7 @@ static int pkcs7_load_certs_keys(
 #endif /* USE_CERT_BUFFERS_256 */
 #endif /* HAVE_ECC */
 
+#ifndef HAVE_DO178
 #ifdef NO_RSA
     (void)rsaClientCertBuf;
     (void)rsaClientCertBufSz;

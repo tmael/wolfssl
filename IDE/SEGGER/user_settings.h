@@ -144,6 +144,21 @@ Test complete
 #endif
 
 /* ------------------------------------------------------------------------- */
+/* ECC */
+/* ------------------------------------------------------------------------- */
+
+#undef  HAVE_ECC
+#define HAVE_ECC
+
+#undef  TFM_ECC256
+#define TFM_ECC256
+
+#undef  ECC_SHAMIR
+#define ECC_SHAMIR
+
+#define  WOLFSSL_HAVE_SP_ECC
+
+/* ------------------------------------------------------------------------- */
 /* RNG */
 /* ------------------------------------------------------------------------- */
 #define WOLFSSL_GENSEED_FORTEST
@@ -174,6 +189,8 @@ Test complete
 /* ------------------------------------------------------------------------- */
 /* Disable features */
 /* ------------------------------------------------------------------------- */
+#undef WOLFSSL_SMALL_STACK
+#undef WOLFSSL_SP_SMALL
 
 #define NO_INLINE
 
@@ -193,11 +210,6 @@ Test complete
 
 #undef  NO_DSA
 #define NO_DSA
-
-#undef  HAVE_ECC
-#undef  TFM_ECC256
-#undef  ECC_SHAMIR
-#undef  WOLFSSL_HAVE_SP_ECC
 
 #undef  NO_RC4
 #define NO_RC4

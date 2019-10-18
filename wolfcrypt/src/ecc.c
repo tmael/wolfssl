@@ -2961,26 +2961,37 @@ int wc_ecc_mulmod(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
 
 #endif /* !WOLFSSL_ATECC508A */
 
+ecc_point ecc_pointGlobal[64]; 
+int ecc_pointGlobalInx = 0; 
+
 /**
  * use a heap hint when creating new ecc_point
  * return an allocated point on success or NULL on failure
  */
 ecc_point* wc_ecc_new_point_h(void* heap)
 {
+#ifdef WOLFSSL_SMALL_STACK
    ecc_point* p;
-
+#else
+  ecc_point* p = &ecc_pointGlobal[ecc_pointGlobalInx++];
+#endif
    (void)heap;
 
+#ifdef WOLFSSL_SMALL_STACK
    p = (ecc_point*)XMALLOC(sizeof(ecc_point), heap, DYNAMIC_TYPE_ECC);
    if (p == NULL) {
       return NULL;
    }
+#endif
    XMEMSET(p, 0, sizeof(ecc_point));
 
 #ifndef ALT_ECC_SIZE
    if (mp_init_multi(p->x, p->y, p->z, NULL, NULL, NULL) != MP_OKAY) {
+#ifdef WOLFSSL_SMALL_STACK
       XFREE(p, heap, DYNAMIC_TYPE_ECC);
+#endif
       return NULL;
+
    }
 #else
    p->x = (mp_int*)&p->xyz[0];
@@ -3797,6 +3808,15 @@ int wc_ecc_shared_secret_ex(ecc_key* private_key, ecc_point* point,
 
 
 #if !defined(WOLFSSL_ATECC508A) && !defined(WOLFSSL_CRYPTOCELL)
+/* get_digit_count copied from wolfmath.c */
+int get_digit_count(mp_int* a)
+{
+    if (a == NULL)
+        return 0;
+
+    return a->used;
+}
+
 /* return 1 if point is at infinity, 0 if not, < 0 on error */
 int wc_ecc_point_is_at_infinity(ecc_point* p)
 {
@@ -6795,6 +6815,42 @@ int wc_ecc_import_x963(const byte* in, word32 inLen, ecc_key* key)
 
 #ifdef HAVE_ECC_KEY_EXPORT
 
+/* wc_export_int() copied from wolfmath.c */
+
+/* export an mp_int as unsigned char or hex string
+ * encType is WC_TYPE_UNSIGNED_BIN or WC_TYPE_HEX_STR
+ * return MP_OKAY on success */
+int wc_export_int(mp_int* mp, byte* buf, word32* len, word32 keySz,
+    int encType)
+{
+    int err;
+
+    if (mp == NULL)
+        return BAD_FUNC_ARG;
+
+    /* check buffer size */
+    if (*len < keySz) {
+        *len = keySz;
+        return BUFFER_E;
+    }
+
+    *len = keySz;
+    XMEMSET(buf, 0, *len);
+
+    if (encType == WC_TYPE_HEX_STR) {
+    #ifdef WC_MP_TO_RADIX
+        err = mp_tohex(mp, (char*)buf);
+    #else
+        err = NOT_COMPILED_IN;
+    #endif
+    }
+    else {
+        err = mp_to_unsigned_bin(mp, buf + (keySz - mp_unsigned_bin_size(mp)));
+    }
+
+    return err;
+}
+
 /* export ecc key to component form, d is optional if only exporting public
  * encType is WC_TYPE_UNSIGNED_BIN or WC_TYPE_HEX_STR
  * return MP_OKAY on success */
@@ -9549,366 +9605,6 @@ int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
 #endif /* HAVE_ECC_ENCRYPT */
 
 
-#ifdef HAVE_COMP_KEY
-#if !defined(WOLFSSL_ATECC508A) && !defined(WOLFSSL_CRYPTOCELL)
-
-#ifndef WOLFSSL_SP_MATH
-int do_mp_jacobi(mp_int* a, mp_int* n, int* c);
-
-int do_mp_jacobi(mp_int* a, mp_int* n, int* c)
-{
-  int      k, s, res;
-  int      r = 0; /* initialize to help static analysis out */
-  mp_digit residue;
-
-  /* if a < 0 return MP_VAL */
-  if (mp_isneg(a) == MP_YES) {
-     return MP_VAL;
-  }
-
-  /* if n <= 0 return MP_VAL */
-  if (mp_cmp_d(n, 0) != MP_GT) {
-     return MP_VAL;
-  }
-
-  /* step 1. handle case of a == 0 */
-  if (mp_iszero (a) == MP_YES) {
-     /* special case of a == 0 and n == 1 */
-     if (mp_cmp_d (n, 1) == MP_EQ) {
-       *c = 1;
-     } else {
-       *c = 0;
-     }
-     return MP_OKAY;
-  }
-
-  /* step 2.  if a == 1, return 1 */
-  if (mp_cmp_d (a, 1) == MP_EQ) {
-    *c = 1;
-    return MP_OKAY;
-  }
-
-  /* default */
-  s = 0;
-
-  /* divide out larger power of two */
-  k = mp_cnt_lsb(a);
-  res = mp_div_2d(a, k, a, NULL);
-
-  if (res == MP_OKAY) {
-    /* step 4.  if e is even set s=1 */
-    if ((k & 1) == 0) {
-      s = 1;
-    } else {
-      /* else set s=1 if p = 1/7 (mod 8) or s=-1 if p = 3/5 (mod 8) */
-      residue = n->dp[0] & 7;
-
-      if (residue == 1 || residue == 7) {
-        s = 1;
-      } else if (residue == 3 || residue == 5) {
-        s = -1;
-      }
-    }
-
-    /* step 5.  if p == 3 (mod 4) *and* a == 3 (mod 4) then s = -s */
-    if ( ((n->dp[0] & 3) == 3) && ((a->dp[0] & 3) == 3)) {
-      s = -s;
-    }
-  }
-
-  if (res == MP_OKAY) {
-    /* if a == 1 we're done */
-    if (mp_cmp_d(a, 1) == MP_EQ) {
-      *c = s;
-    } else {
-      /* n1 = n mod a */
-      res = mp_mod (n, a, n);
-      if (res == MP_OKAY)
-        res = do_mp_jacobi(n, a, &r);
-
-      if (res == MP_OKAY)
-        *c = s * r;
-    }
-  }
-
-  return res;
-}
-
-
-/* computes the jacobi c = (a | n) (or Legendre if n is prime)
- * HAC pp. 73 Algorithm 2.149
- * HAC is wrong here, as the special case of (0 | 1) is not
- * handled correctly.
- */
-int mp_jacobi(mp_int* a, mp_int* n, int* c)
-{
-    mp_int   a1, n1;
-    int      res;
-
-    /* step 3.  write a = a1 * 2**k  */
-    if ((res = mp_init_multi(&a1, &n1, NULL, NULL, NULL, NULL)) != MP_OKAY) {
-        return res;
-    }
-
-    if ((res = mp_copy(a, &a1)) != MP_OKAY) {
-        goto done;
-    }
-
-    if ((res = mp_copy(n, &n1)) != MP_OKAY) {
-        goto done;
-    }
-
-    res = do_mp_jacobi(&a1, &n1, c);
-
-done:
-  /* cleanup */
-  mp_clear(&n1);
-  mp_clear(&a1);
-
-  return res;
-}
-
-
-/* Solves the modular equation x^2 = n (mod p)
- * where prime number is greater than 2 (odd prime).
- * The result is returned in the third argument x
- * the function returns MP_OKAY on success, MP_VAL or another error on failure
- */
-int mp_sqrtmod_prime(mp_int* n, mp_int* prime, mp_int* ret)
-{
-#ifdef SQRTMOD_USE_MOD_EXP
-  int res;
-
-  mp_int e;
-
-  res = mp_init(&e);
-  if (res == MP_OKAY)
-      res = mp_add_d(prime, 1, &e);
-  if (res == MP_OKAY)
-      res = mp_div_2d(&e, 2, &e, NULL);
-  if (res == MP_OKAY)
-      res = mp_exptmod(n, &e, prime, ret);
-
-  mp_clear(&e);
-
-  return res;
-#else
-  int res, legendre, done = 0;
-  mp_int t1, C, Q, S, Z, M, T, R, two;
-  mp_digit i;
-
-  /* first handle the simple cases n = 0 or n = 1 */
-  if (mp_cmp_d(n, 0) == MP_EQ) {
-    mp_zero(ret);
-    return MP_OKAY;
-  }
-  if (mp_cmp_d(n, 1) == MP_EQ) {
-    return mp_set(ret, 1);
-  }
-
-  /* prime must be odd */
-  if (mp_cmp_d(prime, 2) == MP_EQ) {
-    return MP_VAL;
-  }
-
-  /* is quadratic non-residue mod prime */
-  if ((res = mp_jacobi(n, prime, &legendre)) != MP_OKAY) {
-    return res;
-  }
-  if (legendre == -1) {
-    return MP_VAL;
-  }
-
-  if ((res = mp_init_multi(&t1, &C, &Q, &S, &Z, &M)) != MP_OKAY)
-    return res;
-
-  if ((res = mp_init_multi(&T, &R, &two, NULL, NULL, NULL))
-                          != MP_OKAY) {
-    mp_clear(&t1); mp_clear(&C); mp_clear(&Q); mp_clear(&S); mp_clear(&Z);
-    mp_clear(&M);
-    return res;
-  }
-
-  /* SPECIAL CASE: if prime mod 4 == 3
-   * compute directly: res = n^(prime+1)/4 mod prime
-   * Handbook of Applied Cryptography algorithm 3.36
-   */
-  res = mp_mod_d(prime, 4, &i);
-  if (res == MP_OKAY && i == 3) {
-    res = mp_add_d(prime, 1, &t1);
-
-    if (res == MP_OKAY)
-      res = mp_div_2(&t1, &t1);
-    if (res == MP_OKAY)
-      res = mp_div_2(&t1, &t1);
-    if (res == MP_OKAY)
-      res = mp_exptmod(n, &t1, prime, ret);
-
-    done = 1;
-  }
-
-  /* NOW: TonelliShanks algorithm */
-  if (res == MP_OKAY && done == 0) {
-
-    /* factor out powers of 2 from prime-1, defining Q and S
-    *                                      as: prime-1 = Q*2^S */
-    /* Q = prime - 1 */
-    res = mp_copy(prime, &Q);
-    if (res == MP_OKAY)
-      res = mp_sub_d(&Q, 1, &Q);
-
-    /* S = 0 */
-    if (res == MP_OKAY)
-      mp_zero(&S);
-
-    while (res == MP_OKAY && mp_iseven(&Q) == MP_YES) {
-      /* Q = Q / 2 */
-      res = mp_div_2(&Q, &Q);
-
-      /* S = S + 1 */
-      if (res == MP_OKAY)
-        res = mp_add_d(&S, 1, &S);
-    }
-
-    /* find a Z such that the Legendre symbol (Z|prime) == -1 */
-    /* Z = 2 */
-    if (res == MP_OKAY)
-      res = mp_set_int(&Z, 2);
-
-    while (res == MP_OKAY) {
-      res = mp_jacobi(&Z, prime, &legendre);
-      if (res == MP_OKAY && legendre == -1)
-        break;
-
-      /* Z = Z + 1 */
-      if (res == MP_OKAY)
-        res = mp_add_d(&Z, 1, &Z);
-    }
-
-    /* C = Z ^ Q mod prime */
-    if (res == MP_OKAY)
-      res = mp_exptmod(&Z, &Q, prime, &C);
-
-    /* t1 = (Q + 1) / 2 */
-    if (res == MP_OKAY)
-      res = mp_add_d(&Q, 1, &t1);
-    if (res == MP_OKAY)
-      res = mp_div_2(&t1, &t1);
-
-    /* R = n ^ ((Q + 1) / 2) mod prime */
-    if (res == MP_OKAY)
-      res = mp_exptmod(n, &t1, prime, &R);
-
-    /* T = n ^ Q mod prime */
-    if (res == MP_OKAY)
-      res = mp_exptmod(n, &Q, prime, &T);
-
-    /* M = S */
-    if (res == MP_OKAY)
-      res = mp_copy(&S, &M);
-
-    if (res == MP_OKAY)
-      res = mp_set_int(&two, 2);
-
-    while (res == MP_OKAY && done == 0) {
-      res = mp_copy(&T, &t1);
-
-      /* reduce to 1 and count */
-      i = 0;
-      while (res == MP_OKAY) {
-        if (mp_cmp_d(&t1, 1) == MP_EQ)
-            break;
-        res = mp_exptmod(&t1, &two, prime, &t1);
-        if (res == MP_OKAY)
-          i++;
-      }
-      if (res == MP_OKAY && i == 0) {
-        res = mp_copy(&R, ret);
-        done = 1;
-      }
-
-      if (done == 0) {
-        /* t1 = 2 ^ (M - i - 1) */
-        if (res == MP_OKAY)
-          res = mp_sub_d(&M, i, &t1);
-        if (res == MP_OKAY)
-          res = mp_sub_d(&t1, 1, &t1);
-        if (res == MP_OKAY)
-          res = mp_exptmod(&two, &t1, prime, &t1);
-
-        /* t1 = C ^ (2 ^ (M - i - 1)) mod prime */
-        if (res == MP_OKAY)
-          res = mp_exptmod(&C, &t1, prime, &t1);
-
-        /* C = (t1 * t1) mod prime */
-        if (res == MP_OKAY)
-          res = mp_sqrmod(&t1, prime, &C);
-
-        /* R = (R * t1) mod prime */
-        if (res == MP_OKAY)
-          res = mp_mulmod(&R, &t1, prime, &R);
-
-        /* T = (T * C) mod prime */
-        if (res == MP_OKAY)
-          res = mp_mulmod(&T, &C, prime, &T);
-
-        /* M = i */
-        if (res == MP_OKAY)
-          res = mp_set(&M, i);
-      }
-    }
-  }
-
-  /* done */
-  mp_clear(&t1);
-  mp_clear(&C);
-  mp_clear(&Q);
-  mp_clear(&S);
-  mp_clear(&Z);
-  mp_clear(&M);
-  mp_clear(&T);
-  mp_clear(&R);
-  mp_clear(&two);
-
-  return res;
-#endif
-}
-#endif
-#endif /* !WOLFSSL_ATECC508A && !WOLFSSL_CRYPTOCELL */
-
-
-/* export public ECC key in ANSI X9.63 format compressed */
-static int wc_ecc_export_x963_compressed(ecc_key* key, byte* out, word32* outLen)
-{
-   word32 numlen;
-   int    ret = MP_OKAY;
-
-   if (key == NULL || out == NULL || outLen == NULL)
-       return BAD_FUNC_ARG;
-
-   if (wc_ecc_is_valid_idx(key->idx) == 0) {
-      return ECC_BAD_ARG_E;
-   }
-   numlen = key->dp->size;
-
-   if (*outLen < (1 + numlen)) {
-      *outLen = 1 + numlen;
-      return BUFFER_E;
-   }
-
-   /* store first byte */
-   out[0] = mp_isodd(key->pubkey.y) == MP_YES ? ECC_POINT_COMP_ODD : ECC_POINT_COMP_EVEN;
-
-   /* pad and store x */
-   XMEMSET(out+1, 0, numlen);
-   ret = mp_to_unsigned_bin(key->pubkey.x,
-                       out+1 + (numlen - mp_unsigned_bin_size(key->pubkey.x)));
-   *outLen = 1 + numlen;
-
-   return ret;
-}
-
-#endif /* HAVE_COMP_KEY */
 
 
 int wc_ecc_get_oid(word32 oidSum, const byte** oid, word32* oidSz)

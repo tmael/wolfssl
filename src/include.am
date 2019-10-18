@@ -527,6 +527,9 @@ src_libwolfssl_la_SOURCES += wolfcrypt/src/rsa_cert.c
 src_libwolfssl_la_SOURCES += wolfcrypt/src/asn_cert.c
 src_libwolfssl_la_SOURCES += wolfcrypt/src/misc.c
 endif
+if BUILD_ECC
+src_libwolfssl_la_SOURCES += wolfcrypt/src/ecc.c
+endif
 if BUILD_CHACHA
 src_libwolfssl_la_SOURCES += wolfcrypt/src/chacha_cert.c
 endif

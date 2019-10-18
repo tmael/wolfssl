@@ -173,7 +173,6 @@ int sp_read_unsigned_bin(sp_int* a, const byte* in, word32 inSz)
     return MP_OKAY;
 }
 
-#ifndef HAVE_DO178
 #ifdef HAVE_ECC
 /* Convert a number as string in big-endian format to a big number.
  * Only supports base-16 (hexadecimal).
@@ -229,7 +228,6 @@ int sp_read_radix(sp_int* a, const char* in, int radix)
     return err;
 }
 #endif
-#endif /* !HAVE_DO178 */
 
 /* Compare two big numbers.
  *
