@@ -192,6 +192,8 @@ Test complete
 #undef WOLFSSL_SMALL_STACK
 #undef WOLFSSL_SP_SMALL
 
+#define NO_ASN_CRYPT
+
 #define NO_INLINE
 
 #define NO_SIG_WRAPPER

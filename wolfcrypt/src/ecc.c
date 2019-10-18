@@ -30,7 +30,7 @@
 
 /* public ASN interface */
 #include <wolfssl/wolfcrypt/asn_public.h>
-
+#ifndef HAVE_DO178
 /*
 Possible ECC enable options:
  * HAVE_ECC:            Overall control of ECC                  default: on
@@ -10075,3 +10075,4 @@ int wc_X963_KDF(enum wc_HashType type, const byte* secret, word32 secretSz,
 #endif /* HAVE_X963_KDF */
 
 #endif /* HAVE_ECC */
+#endif /* !HAVE_DO178 */

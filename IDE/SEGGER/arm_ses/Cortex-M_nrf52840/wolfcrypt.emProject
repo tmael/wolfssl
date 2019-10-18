@@ -35,7 +35,7 @@
       <file file_name="../../../../wolfcrypt/src/misc.c" />
       <file file_name="../../../../wolfcrypt/test/test.c" />
       <file file_name="../../../../wolfcrypt/src/asn_cert.c" />
-      <file file_name="../../../../wolfcrypt/src/ecc.c" />
+      <file file_name="../../../../wolfcrypt/src/ecc_cert.c" />
     </folder>
     <folder Name="RTT Files">
       <file file_name="SEGGER_RTT.c" />

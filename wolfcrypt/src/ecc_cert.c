@@ -25,13 +25,13 @@
     #include <config.h>
 #endif
 
-#ifdef HAVE_DO178
 /* in case user set HAVE_ECC there */
 #include <wolfssl/wolfcrypt/settings.h>
 
 /* public ASN interface */
 #include <wolfssl/wolfcrypt/asn_public.h>
 
+#ifdef HAVE_DO178
 /*
 Possible ECC enable options:
  * HAVE_ECC:            Overall control of ECC                  default: on
