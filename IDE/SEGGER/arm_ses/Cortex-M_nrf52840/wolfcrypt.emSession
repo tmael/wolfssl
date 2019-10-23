@@ -64,12 +64,7 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="64" useTextEdit="1" useBinaryEdit="0" left="0" path="main.c" selected="0" top="50" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="198" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../wolfssl/wolfcrypt/settings.h" selected="0" top="164" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="154" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../wolfcrypt/src/sp_c32.c" selected="0" top="145" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1125" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../wolfcrypt/test/test.c" selected="0" top="1113" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="55" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../wolfssl/wolfcrypt/sp_int.h" selected="0" top="22" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="105" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../wolfcrypt/src/rsa_cert.c" selected="1" top="99" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="23" y="1157" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../wolfcrypt/test/test.c" selected="1" top="466" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="wolfcrypt" fileDialogDefaultFilter="*.c" autoConnectTarget="Simulator" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="/home/tesfa/wolfssl/wolfcrypt/test" debugSearchPath="" autoConnectCapabilities="4543"/>
+ <ARMCrossStudioWindow activeProject="wolfcrypt" fileDialogDefaultFilter="*.c" autoConnectTarget="Simulator" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="/home/tesfa/wolfssl/wolfcrypt/src" debugSearchPath="" autoConnectCapabilities="4543"/>
 </session>
