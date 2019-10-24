@@ -16253,7 +16253,11 @@ static int ecc_test_make_pub(WC_RNG* rng)
     unsigned char msg[] = "test wolfSSL ECC public gen";
     word32 x, tmpSz;
     int ret = 0;
+#ifndef HAVE_DO178
     ecc_point* pubPoint = NULL;
+#else
+    ecc_point pubPoint[1] = {0};
+#endif /*!HAVE_DO178*/
 #if defined(HAVE_ECC_DHE) && defined(HAVE_ECC_KEY_EXPORT)
     ecc_key pub;
 #endif
@@ -16275,7 +16279,7 @@ static int ecc_test_make_pub(WC_RNG* rng)
         XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
         return -8312;
     }
-#endif 
+#endif
 
 #ifdef USE_CERT_BUFFERS_256
     XMEMCPY(tmp, ecc_key_der_256, (size_t)sizeof_ecc_key_der_256);
@@ -16335,12 +16339,12 @@ static int ecc_test_make_pub(WC_RNG* rng)
         ERROR_OUT(-8320, done);
     }
     TEST_SLEEP();
-
+#ifndef HAVE_DO178
     pubPoint = wc_ecc_new_point_h(HEAP_HINT);
     if (pubPoint == NULL) {
         ERROR_OUT(-8321, done);
     }
-
+#endif /* !HAVE_DO178 */
     ret = wc_ecc_make_pub(&key, pubPoint);
     if (ret != 0) {
         ERROR_OUT(-8322, done);
@@ -16461,10 +16465,11 @@ done:
 #ifdef WOLFSSL_SMALL_STACK
     XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(exportBuf, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
-#endif 
+#endif
+#ifndef HAVE_DO178
     wc_ecc_del_point_h(pubPoint, HEAP_HINT);
     wc_ecc_free(&key);
-
+#endif /* !HAVE_DO178 */
     return ret;
 }
 #endif /* HAVE_ECC_KEY_IMPORT */
@@ -16949,12 +16954,21 @@ static int ecc_test_curve(WC_RNG* rng, int keySize)
 static int ecc_point_test(void)
 {
     int        ret;
+#ifndef HAVE_DO178
     ecc_point* point;
     ecc_point* point2;
-#ifdef HAVE_COMP_KEY
-    ecc_point* point3;
-    ecc_point* point4;
-#endif
+    #ifdef HAVE_COMP_KEY
+        ecc_point* point3;
+        ecc_point* point4;
+    #endif
+#else
+    ecc_point point[1];
+    ecc_point point2[1];
+    #ifdef HAVE_COMP_KEY
+        ecc_point point3[1];
+        ecc_point point4[1];
+    #endif
+#endif /* !HAVE_DO178*/
     word32     outLen;
     byte       out[65];
     byte       der[] = { 0x04, /* = Uncompressed */
@@ -16994,6 +17008,7 @@ static int ecc_point_test(void)
         return 0;
 
     outLen = sizeof(out);
+#ifndef HAVE_DO178
     point = wc_ecc_new_point_h(HEAP_HINT);
     if (point == NULL)
         return -8400;
@@ -17002,21 +17017,22 @@ static int ecc_point_test(void)
         wc_ecc_del_point(point);
         return -8401;
     }
-#ifdef HAVE_COMP_KEY
-    point3 = wc_ecc_new_point();
-    if (point3 == NULL) {
-        wc_ecc_del_point(point2);
-        wc_ecc_del_point(point);
-        return -8402;
-    }
-    point4 = wc_ecc_new_point();
-    if (point4 == NULL) {
-        wc_ecc_del_point(point3);
-        wc_ecc_del_point(point2);
-        wc_ecc_del_point(point);
-        return -8403;
-    }
-#endif
+    #ifdef HAVE_COMP_KEY
+        point3 = wc_ecc_new_point();
+        if (point3 == NULL) {
+            wc_ecc_del_point(point2);
+            wc_ecc_del_point(point);
+            return -8402;
+        }
+        point4 = wc_ecc_new_point();
+        if (point4 == NULL) {
+            wc_ecc_del_point(point3);
+            wc_ecc_del_point(point2);
+            wc_ecc_del_point(point);
+            return -8403;
+        }
+    #endif
+#endif /* !HAVE_DO178*/
 
     /* Parameter Validation testing. */
     wc_ecc_del_point(NULL);
@@ -17151,13 +17167,14 @@ static int ecc_point_test(void)
 #endif
 
 done:
+#ifndef HAVE_DO178
 #ifdef HAVE_COMP_KEY
     wc_ecc_del_point(point4);
     wc_ecc_del_point(point3);
 #endif
     wc_ecc_del_point(point2);
     wc_ecc_del_point(point);
-
+#endif /* !HAVE_DO178*/
     return ret;
 }
 #endif /* !WOLFSSL_ATECC508A && HAVE_ECC_KEY_IMPORT && HAVE_ECC_KEY_EXPORT */

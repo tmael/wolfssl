@@ -146,14 +146,6 @@ const ecc_set_type ecc_sets[] = {
 };
 #define ECC_SET_COUNT   (sizeof(ecc_sets)/sizeof(ecc_set_type))
 
-/* not thread safe, only supports SINGLE_THREADED */
-#ifdef ECC_POINTS_LIST_SZ
-	static ecc_point ecc_pointGlobal[ECC_POINTS_LIST_SZ];
-#else
-	static ecc_point ecc_pointGlobal[4];
-#endif
-static int ecc_pointGlobalInx = 0;
-
 /* Curve Specs */
 typedef struct ecc_curve_spec {
     const ecc_set_type* dp;
@@ -386,38 +378,6 @@ int wc_ecc_mulmod(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
     return wc_ecc_mulmod_ex(k, G, R, a, modulus, map, NULL);
 }
 
-/**
- * use a heap hint when creating new ecc_point
- * return an allocated point on success or NULL on failure
- */
-ecc_point* wc_ecc_new_point_h(void* heap)
-{
-#ifdef ECC_POINTS_LIST_SZ
-   ecc_point* p = &ecc_pointGlobal[ecc_pointGlobalInx++ % ECC_POINTS_LIST_SZ];
-#else
-   ecc_point* p = &ecc_pointGlobal[ecc_pointGlobalInx++ % 4];
-#endif
-   (void)heap;
-
-   XMEMSET(p, 0, sizeof(ecc_point));
-
-   if (mp_init_multi(p->x, p->y, p->z, NULL, NULL, NULL) != MP_OKAY) {
-      return NULL;
-
-   }
-   return p;
-}
-
-
-/**
-   Allocate a new ECC point
-   return A newly allocated point or NULL on error
-*/
-ecc_point* wc_ecc_new_point(void)
-{
-  return wc_ecc_new_point_h(NULL);
-}
-
 
 void wc_ecc_del_point_h(ecc_point* p, void* heap)
 {
@@ -426,8 +386,6 @@ void wc_ecc_del_point_h(ecc_point* p, void* heap)
       mp_clear(p->x);
       mp_clear(p->y);
       mp_clear(p->z);
-      //XFREE(p, heap, DYNAMIC_TYPE_ECC);
-      ecc_pointGlobalInx--;
    }
    (void)heap;
 }
