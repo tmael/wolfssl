@@ -672,6 +672,7 @@ int SuiteTest(int argc, char** argv)
     func_args args;
     char argv0[3][80];
     char* myArgv[3];
+    WOLFSSL_METHOD* method = NULL;
 
     printf(" Begin Cipher Suite Tests\n");
 
@@ -685,8 +686,10 @@ int SuiteTest(int argc, char** argv)
 #ifdef WOLFSSL_STATIC_MEMORY
     byte memory[200000];
 #endif
-
-    cipherSuiteCtx = wolfSSL_CTX_new(wolfSSLv23_client_method());
+    method = wolfSSLv23_client_method();
+    if (method == NULL)
+        goto exit;
+    cipherSuiteCtx = wolfSSL_CTX_new(method);
     if (cipherSuiteCtx == NULL) {
         printf("can't get cipher suite ctx\n");
         args.return_code = EXIT_FAILURE;
