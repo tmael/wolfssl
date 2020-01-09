@@ -1845,8 +1845,7 @@ static int sp_2048_div_45(const sp_digit* a, const sp_digit* d, sp_digit* m,
         }
         t1[45 - 1] += t1[45 - 2] >> 23;
         t1[45 - 2] &= 0x7fffff;
-        d1 = t1[45 - 1];
-        r1 = (sp_digit)(d1 / dv);
+        r1 = t1[45 - 1] / dv;
 
         sp_2048_mul_d_45(t2, sd, r1);
         sp_2048_sub_45(t1, t1, t2);
@@ -2776,8 +2775,7 @@ static int sp_2048_div_90(const sp_digit* a, const sp_digit* d, sp_digit* m,
         }
         t1[90 - 1] += t1[90 - 2] >> 23;
         t1[90 - 2] &= 0x7fffff;
-        d1 = t1[90 - 1];
-        r1 = (sp_digit)(d1 / dv);
+        r1 = t1[90 - 1] / dv;
 
         sp_2048_mul_d_90(t2, sd, r1);
         sp_2048_sub_90(t1, t1, t2);
@@ -5068,8 +5066,7 @@ static int sp_3072_div_67(const sp_digit* a, const sp_digit* d, sp_digit* m,
         }
         t1[67 - 1] += t1[67 - 2] >> 23;
         t1[67 - 2] &= 0x7fffff;
-        d1 = t1[67 - 1];
-        r1 = (sp_digit)(d1 / dv);
+        r1 = t1[67 - 1] / dv;
 
         sp_3072_mul_d_67(t2, d, r1);
         (void)sp_3072_sub_67(t1, t1, t2);
@@ -6032,8 +6029,7 @@ static int sp_3072_div_134(const sp_digit* a, const sp_digit* d, sp_digit* m,
         }
         t1[134 - 1] += t1[134 - 2] >> 23;
         t1[134 - 2] &= 0x7fffff;
-        d1 = t1[134 - 1];
-        r1 = (sp_digit)(d1 / dv);
+        r1 = t1[134 - 1] / dv;
 
         sp_3072_mul_d_134(t2, sd, r1);
         sp_3072_sub_134(t1, t1, t2);
@@ -8415,8 +8411,7 @@ static int sp_4096_div_98(const sp_digit* a, const sp_digit* d, sp_digit* m,
         }
         t1[98 - 1] += t1[98 - 2] >> 21;
         t1[98 - 2] &= 0x1fffff;
-        d1 = t1[98 - 1];
-        r1 = (sp_digit)(d1 / dv);
+        r1 = t1[98 - 1] / dv;
 
         sp_4096_mul_d_98(t2, sd, r1);
         sp_4096_sub_98(t1, t1, t2);
@@ -9358,8 +9353,7 @@ static int sp_4096_div_196(const sp_digit* a, const sp_digit* d, sp_digit* m,
         }
         t1[196 - 1] += t1[196 - 2] >> 21;
         t1[196 - 2] &= 0x1fffff;
-        d1 = t1[196 - 1];
-        r1 = (sp_digit)(d1 / dv);
+        r1 = t1[196 - 1] / dv;
 
         sp_4096_mul_d_196(t2, sd, r1);
         sp_4096_sub_196(t1, t1, t2);
