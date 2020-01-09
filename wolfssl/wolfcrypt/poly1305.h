@@ -48,11 +48,16 @@
 #define WC_HAS_GCC_4_4_64BIT
 #endif
 
+#ifndef HAVE_DO178
 #ifdef USE_INTEL_SPEEDUP
 #elif (defined(WC_HAS_SIZEOF_INT128_64BIT) || defined(WC_HAS_MSVC_64BIT) ||  \
        defined(WC_HAS_GCC_4_4_64BIT))
 #define POLY130564
 #else
+#define POLY130532
+#endif
+#else
+/* DO178 supports 32bit */
 #define POLY130532
 #endif
 
@@ -112,6 +117,10 @@ WOLFSSL_API int wc_Poly1305SetKey(Poly1305* poly1305, const byte* key,
                                   word32 kySz);
 WOLFSSL_API int wc_Poly1305Update(Poly1305* poly1305, const byte*, word32);
 WOLFSSL_API int wc_Poly1305Final(Poly1305* poly1305, byte* tag);
+
+/* AEAD Functions */
+WOLFSSL_API int wc_Poly1305_Pad(Poly1305* ctx, word32 lenToPad);
+WOLFSSL_API int wc_Poly1305_EncodeSizes(Poly1305* ctx, word32 aadSz, word32 dataSz);
 WOLFSSL_API int wc_Poly1305_MAC(Poly1305* ctx, byte* additional, word32 addSz,
                                byte* input, word32 sz, byte* tag, word32 tagSz);
 
@@ -124,4 +133,3 @@ void poly1305_blocks(Poly1305* ctx, const unsigned char *m,
 
 #endif /* HAVE_POLY1305 */
 #endif /* WOLF_CRYPT_POLY1305_H */
-

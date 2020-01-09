@@ -25,7 +25,7 @@
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
-
+#ifndef HAVE_DO178
 /*
 ASN Options:
  * NO_ASN_TIME: Disables time parts of the ASN code for systems without an RTC
@@ -16272,3 +16272,4 @@ int wc_ParseCertPIV(wc_CertPIV* piv, const byte* buf, word32 totalSz)
 
 
 #endif /* WOLFSSL_SEP */
+#endif /* !HAVE_DO178 */

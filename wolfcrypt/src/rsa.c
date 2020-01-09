@@ -27,6 +27,8 @@
 #include <wolfssl/wolfcrypt/settings.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 
+#ifndef HAVE_DO178
+
 #ifndef NO_RSA
 
 #if defined(HAVE_FIPS) && \
@@ -4164,3 +4166,4 @@ int wc_RsaSetNonBlockTime(RsaKey* key, word32 maxBlockUs, word32 cpuMHz)
 #endif /* WC_RSA_NONBLOCK */
 
 #endif /* NO_RSA */
+#endif /* !HAVE_DO178 */

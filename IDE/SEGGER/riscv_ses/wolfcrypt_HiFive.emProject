@@ -1,0 +1,118 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="wolfcrypt_HiFive" target="20" version="2">
+  <project Name="wolfcrypt_HiFive">
+    <configuration
+      Name="Common"
+      arm_linker_heap_size="1024"
+      arm_linker_jtag_pad_post_dr="0"
+      arm_linker_jtag_pad_post_ir="0"
+      arm_linker_stack_size="1024"
+      c_preprocessor_definitions="WOLFSSL_USER_SETTINGS"
+      c_user_include_directories=".;../../../;../../../IDE/ECLIPSE/SIFIVE/"
+      debug_target_connection="J-Link"
+      heap_size="8192"
+      linker_output_format="hex"
+      linker_section_placement_file="$(ProjectDir)/flash_placement_riscv.xml"
+      linker_section_placements_segments="FLASH RX 0x20400000 0x10000000;SRAM RWX 0x80000000 0x00010000"
+      project_directory=""
+      project_type="Executable"
+      speed="4000"
+      stack_size="4096"
+      supplyPower="No" />
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="../../../wolfcrypt/src/aes.c" />
+      <file file_name="../../../wolfcrypt/src/arc4.c" />
+      <file file_name="../../../wolfcrypt/src/asm.c" />
+      <file file_name="../../../wolfcrypt/src/asn.c" />
+      <file file_name="../../../wolfcrypt/src/async.c" />
+      <file file_name="../../../wolfcrypt/src/blake2b.c" />
+      <file file_name="../../../wolfcrypt/src/camellia.c" />
+      <file file_name="../../../wolfcrypt/src/chacha20_poly1305.c" />
+      <file file_name="../../../wolfcrypt/src/chacha.c" />
+      <file file_name="../../../wolfcrypt/src/cmac.c" />
+      <file file_name="../../../wolfcrypt/src/coding.c" />
+      <file file_name="../../../wolfcrypt/src/compress.c" />
+      <file file_name="../../../wolfcrypt/src/cpuid.c" />
+      <file file_name="../../../wolfcrypt/src/cryptocb.c" />
+      <file file_name="../../../wolfcrypt/src/curve25519.c" />
+      <file file_name="../../../wolfcrypt/src/des3.c" />
+      <file file_name="../../../wolfcrypt/src/dh.c" />
+      <file file_name="../../../wolfcrypt/src/dsa.c" />
+      <file file_name="../../../wolfcrypt/src/ecc.c" />
+      <file file_name="../../../wolfcrypt/src/ecc_fp.c" />
+      <file file_name="../../../wolfcrypt/src/ed25519.c" />
+      <file file_name="../../../wolfcrypt/src/error.c" />
+      <file file_name="../../../wolfcrypt/src/evp.c" />
+      <file file_name="../../../wolfcrypt/src/fe_low_mem.c" />
+      <file file_name="../../../wolfcrypt/src/fe_operations.c" />
+      <file file_name="../../../wolfcrypt/src/fips.c" />
+      <file file_name="../../../wolfcrypt/src/fips_test.c" />
+      <file file_name="../../../wolfcrypt/src/ge_low_mem.c" />
+      <file file_name="../../../wolfcrypt/src/ge_operations.c" />
+      <file file_name="../../../wolfcrypt/src/hash.c" />
+      <file file_name="../../../wolfcrypt/src/hc128.c" />
+      <file file_name="../../../wolfcrypt/src/hmac.c" />
+      <file file_name="../../../wolfcrypt/src/idea.c" />
+      <file file_name="../../../wolfcrypt/src/integer.c" />
+      <file file_name="../../../wolfcrypt/src/logging.c" />
+      <file file_name="../../../wolfcrypt/src/md2.c" />
+      <file file_name="../../../wolfcrypt/src/md4.c" />
+      <file file_name="../../../wolfcrypt/src/md5.c" />
+      <file file_name="../../../wolfcrypt/src/memory.c" />
+      <file file_name="../../../wolfcrypt/src/misc.c" />
+      <file file_name="../../../wolfcrypt/src/pkcs12.c" />
+      <file file_name="../../../wolfcrypt/src/pkcs7.c" />
+      <file file_name="../../../wolfcrypt/src/poly1305.c" />
+      <file file_name="../../../wolfcrypt/src/pwdbased.c" />
+      <file file_name="../../../wolfcrypt/src/rabbit.c" />
+      <file file_name="../../../wolfcrypt/src/random.c" />
+      <file file_name="../../../wolfcrypt/src/ripemd.c" />
+      <file file_name="../../../wolfcrypt/src/rsa.c" />
+      <file file_name="../../../wolfcrypt/src/selftest.c" />
+      <file file_name="../../../wolfcrypt/src/sha256.c" />
+      <file file_name="../../../wolfcrypt/src/sha3.c" />
+      <file file_name="../../../wolfcrypt/src/sha512.c" />
+      <file file_name="../../../wolfcrypt/src/sha.c" />
+      <file file_name="../../../wolfcrypt/src/signature.c" />
+      <file file_name="../../../wolfcrypt/src/sp_arm32.c" />
+      <file file_name="../../../wolfcrypt/src/sp_arm64.c" />
+      <file file_name="../../../wolfcrypt/src/sp_armthumb.c" />
+      <file file_name="../../../wolfcrypt/src/sp_c32.c" />
+      <file file_name="../../../wolfcrypt/src/sp_c64.c" />
+      <file file_name="../../../wolfcrypt/src/sp_cortexm.c" />
+      <file file_name="../../../wolfcrypt/src/sp_int.c" />
+      <file file_name="../../../wolfcrypt/src/sp_x86_64.c" />
+      <file file_name="../../../wolfcrypt/src/srp.c" />
+      <file file_name="../../../wolfcrypt/src/tfm.c" />
+      <file file_name="../../../wolfcrypt/src/wc_encrypt.c" />
+      <file file_name="../../../wolfcrypt/src/wc_pkcs11.c" />
+      <file file_name="../../../wolfcrypt/src/wc_port.c" />
+      <file file_name="../../../wolfcrypt/src/wolfcrypt_first.c" />
+      <file file_name="../../../wolfcrypt/src/wolfcrypt_last.c" />
+      <file file_name="../../../wolfcrypt/src/wolfevent.c" />
+      <file file_name="../../../wolfcrypt/src/wolfmath.c" />
+      <file file_name="main.c" />
+    </folder>
+    <folder Name="System Files">
+      <file file_name="riscv_crt0.s" />
+    </folder>
+    <configuration
+      Name="Debug"
+      arm_linker_jtag_pad_post_dr="0"
+      arm_linker_jtag_pad_post_ir="0"
+      c_preprocessor_undefinitions=""
+      supplyPower="No" />
+  </project>
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_optimization_level="None" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="None"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 1" />
+</solution>
