@@ -63,7 +63,7 @@ int wc_ChaCha20Poly1305_Encrypt(
 
     ret = wc_ChaCha20Poly1305_Init(&aead, inKey, inIV,
         CHACHA20_POLY1305_AEAD_ENCRYPT);
-    if ((ret == 0) && inAAD && (inAADLen > 0))
+    if (ret == 0)
         ret = wc_ChaCha20Poly1305_UpdateAad(&aead, inAAD, inAADLen);
     if (ret == 0)
         ret = wc_ChaCha20Poly1305_UpdateData(&aead, inPlaintext, outCiphertext,
@@ -72,7 +72,6 @@ int wc_ChaCha20Poly1305_Encrypt(
         ret = wc_ChaCha20Poly1305_Final(&aead, outAuthTag);
     return ret;
 }
-
 
 int wc_ChaCha20Poly1305_Decrypt(
                 const byte inKey[CHACHA20_POLY1305_AEAD_KEYSIZE],
@@ -99,7 +98,7 @@ int wc_ChaCha20Poly1305_Decrypt(
 
     ret = wc_ChaCha20Poly1305_Init(&aead, inKey, inIV,
         CHACHA20_POLY1305_AEAD_DECRYPT);
-    if ((ret == 0) && inAAD && (inAADLen > 0))
+    if (ret == 0)
         ret = wc_ChaCha20Poly1305_UpdateAad(&aead, inAAD, inAADLen);
     if (ret == 0)
         ret = wc_ChaCha20Poly1305_UpdateData(&aead, inCiphertext, outPlaintext,
@@ -183,7 +182,7 @@ int wc_ChaCha20Poly1305_UpdateAad(ChaChaPoly_Aead* aead,
 {
     int ret = 0;
 
-    if (aead == NULL || inAAD == NULL) {
+    if (aead == NULL || (inAAD == NULL && inAADLen > 0)) {
         return BAD_FUNC_ARG;
     }
     if (aead->state != CHACHA20_POLY1305_STATE_READY &&
@@ -191,7 +190,7 @@ int wc_ChaCha20Poly1305_UpdateAad(ChaChaPoly_Aead* aead,
         return BAD_STATE_E;
     }
 
-    if (inAADLen > 0) {
+    if (inAAD && inAADLen > 0) {
         ret = wc_Poly1305Update(&aead->poly, inAAD, inAADLen);
         if (ret == 0) {
             aead->aadLen += inAADLen;
@@ -225,7 +224,7 @@ int wc_ChaCha20Poly1305_UpdateData(ChaChaPoly_Aead* aead,
     /* advance state */
     aead->state = CHACHA20_POLY1305_STATE_DATA;
 
-    /* Perform ChaCha20 encrypt or decrypt inline and Poly1305 auth calc */
+    /* Perform ChaCha20 encrypt/decrypt and Poly1305 auth calc */
     if (ret == 0) {
         if (aead->isEncrypt) {
             ret = wc_Chacha_Process(&aead->chacha, outData, inData, dataLen);
@@ -283,6 +282,5 @@ int wc_ChaCha20Poly1305_Final(ChaChaPoly_Aead* aead,
 
     return ret;
 }
-
 
 #endif /* HAVE_CHACHA && HAVE_POLY1305 */
