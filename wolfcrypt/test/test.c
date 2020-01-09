@@ -520,6 +520,8 @@ int wolfcrypt_test(void* args)
     if (args)
         ((func_args*)args)->return_code = -1; /* error state */
 
+#ifndef HAVE_DO178
+
 #ifdef WOLFSSL_STATIC_MEMORY
     if (wc_LoadStaticMemory(&HEAP_HINT, gTestMemory, sizeof(gTestMemory),
                                                 WOLFMEM_GENERAL, 1) != 0) {
@@ -654,6 +656,7 @@ initDefaultName();
     else
         test_pass("SHA-224  test passed!\n");
 #endif
+#endif /*!HAVE_DO178 */
 
 #ifndef NO_SHA256
     if ( (ret = sha256_test()) != 0)
@@ -661,7 +664,7 @@ initDefaultName();
     else
         test_pass("SHA-256  test passed!\n");
 #endif
-
+#ifndef HAVE_DO178
 #ifdef WOLFSSL_SHA384
     if ( (ret = sha384_test()) != 0)
         return err_sys("SHA-384  test failed!\n", ret);
@@ -803,7 +806,7 @@ initDefaultName();
     else
         test_pass("Rabbit   test passed!\n");
 #endif
-
+#endif /* !HAVE_DO178 */
 #ifdef HAVE_CHACHA
     if ( (ret = chacha_test()) != 0)
         return err_sys("Chacha   test failed!\n", ret);
@@ -824,7 +827,7 @@ initDefaultName();
     else
         test_pass("ChaCha20-Poly1305 AEAD test passed!\n");
 #endif
-
+#ifndef HAVE_DO178
 #ifndef NO_DES3
     if ( (ret = des_test()) != 0)
         return err_sys("DES      test failed!\n", ret);
@@ -838,6 +841,7 @@ initDefaultName();
     else
         test_pass("DES3     test passed!\n");
 #endif
+#endif /* !HAVE_DO178 */
 
 #ifndef NO_AES
     if ( (ret = aes_test()) != 0)
@@ -886,7 +890,7 @@ initDefaultName();
         test_pass("AES Key Wrap test passed!\n");
 #endif
 #endif
-
+#ifndef HAVE_DO178
 #ifdef HAVE_CAMELLIA
     if ( (ret = camellia_test()) != 0)
         return err_sys("CAMELLIA test failed!\n", ret);
@@ -907,6 +911,7 @@ initDefaultName();
     else
         test_pass("RANDOM   test passed!\n");
 #endif /* WC_NO_RNG */
+#endif /* !HAVE_DO178 */
 
 #ifndef NO_RSA
     #ifdef WC_RSA_NO_PADDING
@@ -921,6 +926,7 @@ initDefaultName();
         test_pass("RSA      test passed!\n");
 #endif
 
+#ifndef HAVE_DO178
 #ifndef NO_DH
     if ( (ret = dh_test()) != 0)
         return err_sys("DH       test failed!\n", ret);
@@ -1158,6 +1164,7 @@ initDefaultName();
 #if defined(HAVE_THREAD_LS) && defined(HAVE_ECC) && defined(FP_ECC)
     wc_ecc_fp_free();
 #endif
+#endif /* !HAVE_DO178*/
 
     if (args)
         ((func_args*)args)->return_code = ret;
@@ -1177,7 +1184,9 @@ initDefaultName();
     int main(int argc, char** argv)
 #endif
     {
+#ifndef HAVE_DO178
         int ret;
+#endif /* !HAVE_DO178*/
         func_args args;
 #ifdef WOLFSSL_ESPIDF
         /* set dummy wallclock time. */
@@ -1215,22 +1224,24 @@ initDefaultName();
         args.argc = argc;
         args.argv = argv;
 #endif
+
+#ifndef HAVE_DO178
         if ((ret = wolfCrypt_Init()) != 0) {
             printf("wolfCrypt_Init failed %d\n", ret);
             err_sys("Error with wolfCrypt_Init!\n", -1003);
         }
-
+#endif /* !HAVE_DO178*/
     #ifdef HAVE_STACK_SIZE
         StackSizeCheck(&args, wolfcrypt_test);
     #else
         wolfcrypt_test(&args);
     #endif
-
+#ifndef HAVE_DO178
         if ((ret = wolfCrypt_Cleanup()) != 0) {
             printf("wolfCrypt_Cleanup failed %d\n", ret);
             err_sys("Error with wolfCrypt_Cleanup!\n", -1004);
         }
-
+#endif /* !HAVE_DO178*/
 #ifdef HAVE_WNR
         if (wc_FreeNetRandom() < 0)
             err_sys("Failed to free netRandom context", -1005);
@@ -1302,6 +1313,7 @@ static int _SaveDerAndPem(const byte* der, int derSz,
 }
 #endif /* WOLFSSL_KEY_GEN || WOLFSSL_CERT_GEN */
 
+#ifndef HAVE_DO178
 int error_test(void)
 {
     const char* errStr;
@@ -2237,7 +2249,7 @@ exit:
     return ret;
 }
 #endif
-
+#endif /* !HAVE_DO178 */
 
 #ifndef NO_SHA256
 int sha256_test(void)
@@ -2352,7 +2364,7 @@ exit:
 }
 #endif
 
-
+#ifndef HAVE_DO178
 #ifdef WOLFSSL_SHA512
 int sha512_test(void)
 {
@@ -4312,7 +4324,7 @@ int rabbit_test(void)
     return 0;
 }
 #endif /* NO_RABBIT */
-
+#endif /* !HAVE_DO178 */
 
 #ifdef HAVE_CHACHA
 int chacha_test(void)
@@ -5030,10 +5042,16 @@ int chacha20_poly1305_aead_test(void)
         0x39, 0x23, 0x36, 0xfe, 0xa1, 0x85, 0x1f, 0x38
     };
 
-    byte generatedCiphertext[272];
-    byte generatedPlaintext[272];
+    byte generatedCiphertext[265]; /* max plaintext2/cipher2 */
+    byte generatedPlaintext[265];  /* max plaintext2/cipher2 */
     byte generatedAuthTag[CHACHA20_POLY1305_AEAD_AUTHTAG_SIZE];
     int err;
+
+    ChaChaPoly_Aead aead;
+    #define TEST_SMALL_CHACHA_CHUNKS 64
+    #ifdef TEST_SMALL_CHACHA_CHUNKS
+    word32 testLen;
+    #endif
 
     XMEMSET(generatedCiphertext, 0, sizeof(generatedCiphertext));
     XMEMSET(generatedAuthTag, 0, sizeof(generatedAuthTag));
@@ -5164,11 +5182,219 @@ int chacha20_poly1305_aead_test(void)
         return -4517;
     }
 
+
+    /* AEAD init/update/final */
+    err = wc_ChaCha20Poly1305_Init(NULL, key1, iv1,
+        CHACHA20_POLY1305_AEAD_DECRYPT);
+    if (err != BAD_FUNC_ARG)
+        return -4520;
+    err = wc_ChaCha20Poly1305_Init(&aead, NULL, iv1,
+        CHACHA20_POLY1305_AEAD_DECRYPT);
+    if (err != BAD_FUNC_ARG)
+        return -4521;
+    err = wc_ChaCha20Poly1305_Init(&aead, key1, NULL,
+        CHACHA20_POLY1305_AEAD_DECRYPT);
+    if (err != BAD_FUNC_ARG)
+        return -4522;
+    err = wc_ChaCha20Poly1305_UpdateAad(NULL, aad1, sizeof(aad1));
+    if (err != BAD_FUNC_ARG)
+        return -4523;
+    err = wc_ChaCha20Poly1305_UpdateAad(&aead, NULL, sizeof(aad1));
+    if (err != BAD_FUNC_ARG)
+        return -4524;
+    err = wc_ChaCha20Poly1305_UpdateData(NULL, generatedPlaintext,
+        generatedPlaintext, sizeof(plaintext1));
+    if (err != BAD_FUNC_ARG)
+        return -4525;
+    err = wc_ChaCha20Poly1305_UpdateData(&aead, generatedPlaintext, NULL,
+        sizeof(plaintext1));
+    if (err != BAD_FUNC_ARG)
+        return -4526;
+    err = wc_ChaCha20Poly1305_UpdateData(&aead, NULL, generatedPlaintext,
+        sizeof(plaintext1));
+    if (err != BAD_FUNC_ARG)
+        return -4526;
+    err = wc_ChaCha20Poly1305_Final(NULL, generatedAuthTag);
+    if (err != BAD_FUNC_ARG)
+        return -4527;
+    err = wc_ChaCha20Poly1305_Final(&aead, NULL);
+    if (err != BAD_FUNC_ARG)
+        return -4528;
+
+    /* AEAD init/update/final - state tests */
+    aead.state = CHACHA20_POLY1305_STATE_INIT;
+    err = wc_ChaCha20Poly1305_UpdateAad(&aead, aad1, sizeof(aad1));
+    if (err != BAD_STATE_E)
+        return -4529;
+    aead.state = CHACHA20_POLY1305_STATE_DATA;
+    err = wc_ChaCha20Poly1305_UpdateAad(&aead, aad1, sizeof(aad1));
+    if (err != BAD_STATE_E)
+        return -4530;
+    aead.state = CHACHA20_POLY1305_STATE_INIT;
+    err = wc_ChaCha20Poly1305_UpdateData(&aead, generatedPlaintext,
+        generatedPlaintext, sizeof(plaintext1));
+    if (err != BAD_STATE_E)
+        return -4531;
+    aead.state = CHACHA20_POLY1305_STATE_INIT;
+    err = wc_ChaCha20Poly1305_Final(&aead, generatedAuthTag);
+    if (err != BAD_STATE_E)
+        return -4532;
+    aead.state = CHACHA20_POLY1305_STATE_READY;
+    err = wc_ChaCha20Poly1305_Final(&aead, generatedAuthTag);
+    if (err != BAD_STATE_E)
+        return -4533;
+
+    XMEMSET(generatedCiphertext, 0, sizeof(generatedCiphertext));
+    XMEMSET(generatedAuthTag, 0, sizeof(generatedAuthTag));
+    XMEMSET(generatedPlaintext, 0, sizeof(generatedPlaintext));
+
+    /* Test 1 - Encrypt */
+    err = wc_ChaCha20Poly1305_Init(&aead, key1, iv1,
+        CHACHA20_POLY1305_AEAD_ENCRYPT);
+    if (err != 0)
+        return -4537;
+    err = wc_ChaCha20Poly1305_UpdateAad(&aead, aad1, sizeof(aad1));
+    if (err != 0)
+        return -4538;
+#ifdef TEST_SMALL_CHACHA_CHUNKS
+    /* test doing data in smaller chunks */
+    for (testLen=0; testLen<sizeof(plaintext1); ) {
+        word32 dataLen = sizeof(plaintext1) - testLen;
+        if (dataLen > TEST_SMALL_CHACHA_CHUNKS)
+            dataLen = TEST_SMALL_CHACHA_CHUNKS;
+        err = wc_ChaCha20Poly1305_UpdateData(&aead, &plaintext1[testLen],
+            &generatedCiphertext[testLen], dataLen);
+        if (err != 0)
+            return -4539;
+        testLen += dataLen;
+    }
+#else
+    err = wc_ChaCha20Poly1305_UpdateData(&aead, plaintext1,
+        generatedCiphertext, sizeof(plaintext1));
+#endif
+    err = wc_ChaCha20Poly1305_Final(&aead, generatedAuthTag);
+    if (err != 0)
+        return -4540;
+    err = wc_ChaCha20Poly1305_CheckTag(generatedAuthTag, authTag1);
+    if (err != 0)
+        return -4541;
+    if (XMEMCMP(generatedCiphertext, cipher1, sizeof(cipher1))) {
+        return -4542;
+    }
+
+    /* Test 1 - Decrypt */
+    err = wc_ChaCha20Poly1305_Init(&aead, key1, iv1,
+        CHACHA20_POLY1305_AEAD_DECRYPT);
+    if (err != 0)
+        return -4543;
+    err = wc_ChaCha20Poly1305_UpdateAad(&aead, aad1, sizeof(aad1));
+    if (err != 0)
+        return -4544;
+#ifdef TEST_SMALL_CHACHA_CHUNKS
+    /* test doing data in smaller chunks */
+    for (testLen=0; testLen<sizeof(plaintext1); ) {
+        word32 dataLen = sizeof(plaintext1) - testLen;
+        if (dataLen > TEST_SMALL_CHACHA_CHUNKS)
+            dataLen = TEST_SMALL_CHACHA_CHUNKS;
+        err = wc_ChaCha20Poly1305_UpdateData(&aead,
+            &generatedCiphertext[testLen], &generatedPlaintext[testLen],
+            dataLen);
+        if (err != 0)
+            return -4545;
+        testLen += dataLen;
+    }
+#else
+    err = wc_ChaCha20Poly1305_UpdateData(&aead, generatedCiphertext,
+        generatedPlaintext, sizeof(cipher1));
+#endif
+    err = wc_ChaCha20Poly1305_Final(&aead, generatedAuthTag);
+    if (err != 0)
+        return -4546;
+    err = wc_ChaCha20Poly1305_CheckTag(generatedAuthTag, authTag1);
+    if (err != 0)
+        return -4547;
+    if (XMEMCMP(generatedPlaintext, plaintext1, sizeof(plaintext1))) {
+        return -4548;
+    }
+
+    XMEMSET(generatedCiphertext, 0, sizeof(generatedCiphertext));
+    XMEMSET(generatedAuthTag, 0, sizeof(generatedAuthTag));
+    XMEMSET(generatedPlaintext, 0, sizeof(generatedPlaintext));
+
+    /* Test 2 - Encrypt */
+    err = wc_ChaCha20Poly1305_Init(&aead, key2, iv2,
+        CHACHA20_POLY1305_AEAD_ENCRYPT);
+    if (err != 0)
+        return -4550;
+    err = wc_ChaCha20Poly1305_UpdateAad(&aead, aad2, sizeof(aad2));
+    if (err != 0)
+        return -4551;
+#ifdef TEST_SMALL_CHACHA_CHUNKS
+    /* test doing data in smaller chunks */
+    for (testLen=0; testLen<sizeof(plaintext2); ) {
+        word32 dataLen = sizeof(plaintext2) - testLen;
+        if (dataLen > TEST_SMALL_CHACHA_CHUNKS)
+            dataLen = TEST_SMALL_CHACHA_CHUNKS;
+        err = wc_ChaCha20Poly1305_UpdateData(&aead, &plaintext2[testLen],
+            &generatedCiphertext[testLen], dataLen);
+        if (err != 0)
+            return -4552;
+        testLen += dataLen;
+    }
+#else
+    err = wc_ChaCha20Poly1305_UpdateData(&aead, plaintext2, generatedCiphertext,
+        sizeof(plaintext2));
+#endif
+    err = wc_ChaCha20Poly1305_Final(&aead, generatedAuthTag);
+    if (err != 0)
+        return -4553;
+    err = wc_ChaCha20Poly1305_CheckTag(generatedAuthTag, authTag2);
+    if (err != 0)
+        return -4554;
+    if (XMEMCMP(generatedCiphertext, cipher2, sizeof(cipher2))) {
+        return -4555;
+    }
+
+    /* Test 2 - Decrypt */
+    err = wc_ChaCha20Poly1305_Init(&aead, key2, iv2,
+        CHACHA20_POLY1305_AEAD_DECRYPT);
+    if (err != 0)
+        return -4556;
+    err = wc_ChaCha20Poly1305_UpdateAad(&aead, aad2, sizeof(aad2));
+    if (err != 0)
+        return -4557;
+#ifdef TEST_SMALL_CHACHA_CHUNKS
+    /* test doing data in smaller chunks */
+    for (testLen=0; testLen<sizeof(plaintext2); ) {
+        word32 dataLen = sizeof(plaintext2) - testLen;
+        if (dataLen > TEST_SMALL_CHACHA_CHUNKS)
+            dataLen = TEST_SMALL_CHACHA_CHUNKS;
+        err = wc_ChaCha20Poly1305_UpdateData(&aead,
+            &generatedCiphertext[testLen], &generatedPlaintext[testLen],
+            dataLen);
+        if (err != 0)
+            return -4558;
+        testLen += dataLen;
+    }
+#else
+    err = wc_ChaCha20Poly1305_UpdateData(&aead, generatedCiphertext,
+        generatedPlaintext, sizeof(cipher2));
+#endif
+    err = wc_ChaCha20Poly1305_Final(&aead, generatedAuthTag);
+    if (err != 0)
+        return -4559;
+    err = wc_ChaCha20Poly1305_CheckTag(generatedAuthTag, authTag2);
+    if (err != 0)
+        return -4560;
+    if (XMEMCMP(generatedPlaintext, plaintext2, sizeof(plaintext2))) {
+        return -4561;
+    }
+
     return err;
 }
 #endif /* HAVE_CHACHA && HAVE_POLY1305 */
 
-
+#ifndef HAVE_DO178
 #ifndef NO_DES3
 int des_test(void)
 {
@@ -5382,7 +5608,7 @@ int des3_test(void)
     return 0;
 }
 #endif /* NO_DES */
-
+#endif /* !HAVE_DO178 */
 
 #ifndef NO_AES
 #ifdef WOLFSSL_AES_CFB
@@ -6267,9 +6493,85 @@ static int aes_xts_args_test(void)
 #endif /* WOLFSSL_AES_128 */
 #endif /* WOLFSSL_AES_XTS */
 
+#ifdef HAVE_DO178
+/* copied from wolfcrypt/src/wc_encrypt.c*/
+#if !defined(NO_AES) && defined(HAVE_AES_CBC)
+#ifdef HAVE_AES_DECRYPT
+int wc_AesCbcDecryptWithKey(byte* out, const byte* in, word32 inSz,
+                                  const byte* key, word32 keySz, const byte* iv)
+{
+    int  ret = 0;
+#ifdef WOLFSSL_SMALL_STACK
+    Aes* aes = NULL;
+#else
+    Aes  aes[1];
+#endif
+
+    if (out == NULL || in == NULL || key == NULL || iv == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+#ifdef WOLFSSL_SMALL_STACK
+    aes = (Aes*)XMALLOC(sizeof(Aes), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    if (aes == NULL)
+        return MEMORY_E;
+#endif
+
+    ret = wc_AesInit(aes, NULL, INVALID_DEVID);
+    if (ret == 0) {
+        ret = wc_AesSetKey(aes, key, keySz, iv, AES_DECRYPTION);
+        if (ret == 0)
+            ret = wc_AesCbcDecrypt(aes, out, in, inSz);
+
+        wc_AesFree(aes);
+    }
+
+#ifdef WOLFSSL_SMALL_STACK
+    XFREE(aes, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
+
+    return ret;
+}
+#endif /* HAVE_AES_DECRYPT */
+
+int wc_AesCbcEncryptWithKey(byte* out, const byte* in, word32 inSz,
+                            const byte* key, word32 keySz, const byte* iv)
+{
+    int  ret = 0;
+#ifdef WOLFSSL_SMALL_STACK
+    Aes* aes = NULL;
+#else
+    Aes  aes[1];
+#endif
+
+#ifdef WOLFSSL_SMALL_STACK
+    aes = (Aes*)XMALLOC(sizeof(Aes), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    if (aes == NULL)
+        return MEMORY_E;
+#endif
+
+    ret = wc_AesInit(aes, NULL, INVALID_DEVID);
+    if (ret == 0) {
+        ret = wc_AesSetKey(aes, key, keySz, iv, AES_ENCRYPTION);
+        if (ret == 0)
+            ret = wc_AesCbcEncrypt(aes, out, in, inSz);
+
+        wc_AesFree(aes);
+    }
+
+#ifdef WOLFSSL_SMALL_STACK
+    XFREE(aes, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
+
+    return ret;
+}
+#endif /* !NO_AES && HAVE_AES_CBC */
+#endif /* HAVE_DO178 */
+
 #if defined(HAVE_AES_CBC) && defined(WOLFSSL_AES_128)
 static int aes_cbc_test(void)
 {
+
     byte cipher[AES_BLOCK_SIZE];
     byte plain[AES_BLOCK_SIZE];
     int  ret;
@@ -7950,7 +8252,6 @@ int aesccm_test(void)
      * wc_AesCcmEncrypt_ex() */
     if (wc_AesCcmSetKey(&enc, k, sizeof(k)) != 0)
         return -8220;
-
     if (wc_AesCcmSetNonce(&enc, iv, sizeof(iv)) != 0)
         return -8221;
     if (wc_AesCcmEncrypt_ex(&enc, c2, p, sizeof(c2), iv2, sizeof(iv2),
@@ -8174,7 +8475,7 @@ int aeskeywrap_test(void)
 
 #endif /* NO_AES */
 
-
+#ifndef HAVE_DO178
 #ifdef HAVE_CAMELLIA
 
 enum {
@@ -9050,6 +9351,7 @@ byte GetEntropy(ENTROPY_CMD cmd, byte* out)
 
 #endif /* HAVE_NTRU */
 
+#endif /* !HAVE_DO178 */
 
 #ifndef NO_FILESYSTEM
 
@@ -9091,13 +9393,17 @@ byte GetEntropy(ENTROPY_CMD cmd, byte* out)
             #endif
         #endif
     #endif /* !NO_RSA */
+#ifndef HAVE_DO178
     #ifndef NO_DH
         static const char* dhKey = CERT_ROOT "dh2048.der";
     #endif
     #ifndef NO_DSA
         static const char* dsaKey = CERT_ROOT "dsa2048.der";
     #endif
+#endif /* !HAVE_DO178 */
 #endif /* !USE_CERT_BUFFER_* */
+
+#ifndef HAVE_DO178
 #if !defined(USE_CERT_BUFFERS_256) && !defined(NO_ASN)
     #ifdef HAVE_ECC
         /* cert files to be used in rsa cert gen test, check if RSA enabled */
@@ -9153,6 +9459,7 @@ byte GetEntropy(ENTROPY_CMD cmd, byte* out)
         static const char* certEccDerFile = CERT_PREFIX "certecc.der";
     #endif
 #endif /* HAVE_ECC */
+#endif /* !HAVE_DO178 */
 
 #ifndef NO_RSA
     #if defined(WOLFSSL_CERT_GEN) || \
@@ -10469,6 +10776,7 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
 #endif
     int              len;
     byte*            plain;
+#ifndef HAVE_DO178
     int              mgf[]   = {
 #ifndef NO_SHA
                                  WC_MGF1SHA1,
@@ -10499,6 +10807,10 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
                                  WC_HASH_TYPE_SHA512,
 #endif
                                };
+#else
+    int              mgf[]   = {WC_MGF1SHA256};
+    enum wc_HashType hash[]  = {WC_HASH_TYPE_SHA256};
+#endif /* !HAVE_DO178 */
 
     DECLARE_VAR_INIT(in, byte, inLen, inStr, HEAP_HINT);
     DECLARE_VAR(out, byte, RSA_TEST_BYTES, HEAP_HINT);
@@ -10506,12 +10818,19 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
 
     /* Test all combinations of hash and MGF. */
     for (j = 0; j < (int)(sizeof(hash)/sizeof(*hash)); j++) {
+#ifndef HAVE_DO178
         /* Calculate hash of message. */
         ret = wc_Hash(hash[j], in, inLen, digest, sizeof(digest));
+#else
+        ret = wc_Sha256Hash(in, inLen, digest);
+#endif
         if (ret != 0)
             ERROR_OUT(-6817, exit_rsa_pss);
+#ifndef HAVE_DO178
         digestSz = wc_HashGetDigestSize(hash[j]);
-
+#else
+        digestSz = WC_SHA256_DIGEST_SIZE;
+#endif
         for (i = 0; i < (int)(sizeof(mgf)/sizeof(*mgf)); i++) {
             outSz = RSA_TEST_BYTES;
             do {
@@ -10584,7 +10903,12 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
     }
 
     /* Test that a salt length of zero works. */
-    digestSz = wc_HashGetDigestSize(hash[0]);
+#ifndef HAVE_DO178
+        digestSz = wc_HashGetDigestSize(hash[0]);
+#else
+        digestSz = WC_SHA256_DIGEST_SIZE;
+#endif
+
     outSz = RSA_TEST_BYTES;
     do {
     #if defined(WOLFSSL_ASYNC_CRYPT)
@@ -10661,8 +10985,14 @@ static int rsa_pss_test(WC_RNG* rng, RsaKey* key)
     if (ret != 0)
         ERROR_OUT(-6826, exit_rsa_pss);
 
+#ifndef HAVE_DO178
+
     /* Test bad salt lengths in various APIs. */
     digestSz = wc_HashGetDigestSize(hash[0]);
+#else
+    digestSz = WC_SHA256_DIGEST_SIZE;
+#endif
+
     outSz = RSA_TEST_BYTES;
 #ifndef WOLFSSL_PSS_SALT_LEN_DISCOVER
     len = -2;
@@ -10768,7 +11098,9 @@ int rsa_no_pad_test(void)
 {
     WC_RNG rng;
     RsaKey key;
+#ifdef WOLFSSL_SMALL_STACK
     byte*  tmp = NULL;
+#endif
     size_t bytes;
     int    ret;
     word32 inLen   = 0;
@@ -10796,7 +11128,7 @@ int rsa_no_pad_test(void)
 #else
 	bytes = FOURK_BUF;
 #endif
-
+#ifdef WOLFSSL_SMALL_STACK
     tmp = (byte*)XMALLOC(bytes, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     if (tmp == NULL
     #ifdef WOLFSSL_ASYNC_CRYPT
@@ -10805,7 +11137,9 @@ int rsa_no_pad_test(void)
     ) {
         ERROR_OUT(-6900, exit_rsa_nopadding);
     }
-
+#else
+    byte tmp[bytes];
+#endif /* WOLFSSL_SMALL_STACK */
 #ifdef USE_CERT_BUFFERS_1024
     XMEMCPY(tmp, client_key_der_1024, (size_t)sizeof_client_key_der_1024);
 #elif defined(USE_CERT_BUFFERS_2048)
@@ -10968,7 +11302,10 @@ int rsa_no_pad_test(void)
     ret = 0;
 
 exit_rsa_nopadding:
-    XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+#ifdef WOLFSSL_SMALL_STACK
+    if (tmp)
+        XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
     FREE_VAR(out, HEAP_HINT);
     FREE_VAR(plain, HEAP_HINT);
     wc_FreeRsaKey(&key);
@@ -11575,9 +11912,11 @@ exit_rsa:
 int rsa_test(void)
 {
     int    ret;
+#if defined(WOLFSSL_SMALL_STACK)
     byte*  tmp = NULL;
     byte*  der = NULL;
     byte*  pem = NULL;
+#endif /* WOLFSSL_SMALL_STACK */
     size_t bytes;
     WC_RNG rng;
     RsaKey key;
@@ -11650,6 +11989,7 @@ int rsa_test(void)
 	bytes = FOURK_BUF;
 #endif
 
+#if defined(WOLFSSL_SMALL_STACK)
     tmp = (byte*)XMALLOC(bytes, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     if (tmp == NULL
     #ifdef WOLFSSL_ASYNC_CRYPT
@@ -11658,6 +11998,9 @@ int rsa_test(void)
     ) {
         return -7000;
     }
+#else
+    byte tmp[bytes];
+#endif
 
 #ifdef USE_CERT_BUFFERS_1024
     XMEMCPY(tmp, client_key_der_1024, (size_t)sizeof_client_key_der_1024);
@@ -12494,7 +12837,7 @@ int rsa_test(void)
     {
         Cert        req;
         int         derSz;
-
+#if defined(WOLFSSL_SMALL_STACK)
         der = (byte*)XMALLOC(FOURK_BUF, HEAP_HINT,DYNAMIC_TYPE_TMP_BUFFER);
         if (der == NULL) {
             ERROR_OUT(-7063, exit_rsa);
@@ -12503,7 +12846,10 @@ int rsa_test(void)
         if (pem == NULL) {
             ERROR_OUT(-7064, exit_rsa);
         }
-
+#else
+        byte  der[FOURK_BUF] = {0};
+        byte  pem[FOURK_BUF] = {0};
+#endif /* WOLFSSL_SMALL_STACK */
         if (wc_InitCert(&req)) {
             ERROR_OUT(-7065, exit_rsa);
         }
@@ -12587,11 +12933,12 @@ int rsa_test(void)
         if (derSz < 0) {
             ERROR_OUT(-7074, exit_rsa);
         }
-
+#if defined(WOLFSSL_SMALL_STACK)
         XFREE(pem, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
         pem = NULL;
         XFREE(der, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
         der = NULL;
+#endif /* WOLFSSL_SMALL_STACK */
     }
 #endif /* WOLFSSL_CERT_REQ */
 #endif /* WOLFSSL_CERT_GEN */
@@ -12609,9 +12956,11 @@ exit_rsa:
     wc_FreeRsaKey(&caKey);
 #endif
 
+ #if defined(WOLFSSL_SMALL_STACK)
     XFREE(pem, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(der, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     XFREE(tmp, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
     wc_FreeRng(&rng);
 
     FREE_VAR(in, HEAP_HINT);
@@ -12630,7 +12979,7 @@ exit_rsa:
 
 #endif /* !NO_RSA */
 
-
+#ifndef HAVE_DO178
 #ifndef NO_DH
 
 static int dh_fips_generate_test(WC_RNG *rng)
@@ -17580,10 +17929,10 @@ static int ecc_point_test(void)
         return 0;
 
     outLen = sizeof(out);
-    point = wc_ecc_new_point();
+    point = wc_ecc_new_point_h(HEAP_HINT);
     if (point == NULL)
         return -8400;
-    point2 = wc_ecc_new_point();
+    point2 = wc_ecc_new_point_h(HEAP_HINT);
     if (point2 == NULL) {
         wc_ecc_del_point(point);
         return -8401;
@@ -25703,7 +26052,7 @@ int certpiv_test(void)
     return ret;
 }
 #endif /* WOLFSSL_CERT_PIV */
-
+#endif /* !HAVE_DO178 */
 
 #undef ERROR_OUT
 

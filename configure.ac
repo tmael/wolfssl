@@ -2288,6 +2288,19 @@ else
     AM_CFLAGS="$AM_CFLAGS -DHAVE_RABBIT"
 fi
 
+# DO178
+AC_ARG_ENABLE([do178],
+    [AS_HELP_STRING([--enable-do178],[Enable DO-178C (default: disabled)])],
+    [ ENABLED_DO178=$enableval ],
+    [ ENABLED_DO178=no ]
+    )
+
+if test "$ENABLED_DO178" = "no"
+then
+    AM_CFLAGS="$AM_CFLAGS -DNO_DO178"
+else
+    AM_CFLAGS="$AM_CFLAGS -DHAVE_DO178"
+fi
 
 # FIPS
 AC_ARG_ENABLE([fips],
@@ -3932,7 +3945,7 @@ AC_ARG_WITH([octeon-sync],
         AM_CFLAGS="$AM_CFLAGS -I$OCTEON_ROOT/executive"
         AS_CASE([$OCTEON_HOST],['linux'],[AM_CFLAGS="$AM_CFLAGS -DCVMX_BUILD_FOR_LINUX_HOST"])
 
-        #-I$OCTEON_ROOT/target/include 
+        #-I$OCTEON_ROOT/target/include
         AM_LDFLAGS="$AM_LDFLAGS -lrt -Xlinker -T -Xlinker $OCTEON_ROOT/executive/cvmx-shared-linux.ld"
         AM_LDFLAGS="$AM_LDFLAGS -L$OCTEON_ROOT/executive/$OCTEON_OBJ -lcvmx -lfdt"
 
@@ -4819,6 +4832,14 @@ if test "x$ENABLED_OPENSSLCOEXIST" = "xyes"; then
         AC_MSG_ERROR([Cannot use --enable-opensslcoexist with --enable-opensslextra])
     fi
 fi
+if test "x$ENABLED_DO178" = "xyes"
+then
+#These settings will allow you to run wolfcrypt test in DO-178 mode
+    ENABLED_SHA3=no
+    ENABLED_SHA512=no
+    AM_CFLAGS="-DHAVE_DO178"
+    AM_CFLAGS="$AM_CFLAGS -DWOLFCRYPT_ONLY -DSINGLE_THREADED -DHAVE_AESGCM -DGCM_WORD32 -DHAVE_AES_CBC -DHAVE_POLY1305 -DHAVE_CHACHA -DWOLFSSL_HAVE_SP_RSA -DTFM_TIMING_RESISTANT -DWC_RSA_BLINDING -DWOLFSSL_SP_MATH -DSP_WORD_SIZE=32 -DWOLFSSL_SP_RSA -DWOLFSSL_RSA_VERIFY_INLINE -DWOLFSSL_GENSEED_FORTEST -DHAVE_HASHDRBG -DNO_WOLFSSL_MEMORY -DWOLFSSL_NO_MALLOC -DWOLFSSL_PUBLIC_MP -DWC_RSA_PSS -DWC_RSA_NO_PADDING -DNO_INLINE -DNO_SIG_WRAPPER -DNO_SHA -DNO_PWDBASED -DNO_DH"
+fi
 ################################################################################
 
 # USER SETTINGS
@@ -5001,7 +5022,7 @@ AM_CONDITIONAL([BUILD_PKI],[test "x$ENABLED_PKI" = "xyes"])
 AM_CONDITIONAL([BUILD_DES3],[test "x$ENABLED_DES3" = "xyes"])
 AM_CONDITIONAL([BUILD_PKCS7],[test "x$ENABLED_PKCS7" = "xyes"])
 AM_CONDITIONAL([BUILD_HASHFLAGS],[test "x$ENABLED_HASHFLAGS" = "xyes"])
-
+AM_CONDITIONAL([BUILD_DO178], [test "x$ENABLED_DO178" = "xyes"])
 
 CREATE_HEX_VERSION
 AC_SUBST([AM_CPPFLAGS])
@@ -5283,6 +5304,7 @@ echo "   * Inline Code:                $ENABLED_INLINE"
 echo "   * Linux AF_ALG:               $ENABLED_AFALG"
 echo "   * Linux devcrypto:            $ENABLED_DEVCRYPTO"
 echo "   * Crypto callbacks:           $ENABLED_CRYPTOCB"
+echo "   * DO178:                      $ENABLED_DO178"
 echo ""
 echo "---"
 

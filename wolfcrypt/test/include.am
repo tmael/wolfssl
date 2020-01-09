@@ -1,6 +1,7 @@
 # vim:ft=automake
 # All paths should be given relative to the root
 
+
 if BUILD_WOLFCRYPT_TESTS
 noinst_PROGRAMS+= wolfcrypt/test/testwolfcrypt
 if BUILD_CRYPTONLY
@@ -8,6 +9,9 @@ check_PROGRAMS+= wolfcrypt/test/testwolfcrypt
 endif
 noinst_PROGRAMS+= wolfcrypt/test/testwolfcrypt
 wolfcrypt_test_testwolfcrypt_SOURCES      = wolfcrypt/test/test.c
+if BUILD_DO178
+wolfcrypt_test_testwolfcrypt_SOURCES      += wolfcrypt/src/logging.c
+endif
 wolfcrypt_test_testwolfcrypt_LDADD        = src/libwolfssl.la $(LIB_STATIC_ADD)
 wolfcrypt_test_testwolfcrypt_DEPENDENCIES = src/libwolfssl.la
 noinst_HEADERS += wolfcrypt/test/test.h

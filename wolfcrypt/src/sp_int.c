@@ -191,6 +191,7 @@ int sp_read_unsigned_bin(sp_int* a, const byte* in, int inSz)
     return err;
 }
 
+#ifndef HAVE_DO178
 #ifdef HAVE_ECC
 /* Convert a number as string in big-endian format to a big number.
  * Only supports base-16 (hexadecimal).
@@ -257,6 +258,7 @@ int sp_read_radix(sp_int* a, const char* in, int radix)
     return err;
 }
 #endif
+#endif /* !HAVE_DO178 */
 
 /* Compare two big numbers.
  *
@@ -880,6 +882,8 @@ int sp_lshd(sp_int* a, int s)
 #endif
 
 #if !defined(NO_PWDBASED) || defined(WOLFSSL_KEY_GEN) || !defined(NO_DH)
+#ifndef HAVE_DO178
+
 /* Add two large numbers into result: r = a + b
  *
  * a  SP integer.
@@ -915,6 +919,7 @@ int sp_add(sp_int* a, sp_int* b, sp_int* r)
     return MP_OKAY;
 }
 #endif /* !NO_PWDBASED || WOLFSSL_KEY_GEN || !NO_DH */
+#endif /* !HAVE_DO178 */
 
 #ifndef NO_RSA
 /* Set a number into the big number.
@@ -931,7 +936,7 @@ int sp_set_int(sp_int* a, unsigned long b)
     }
     else {
         a->used = 1;
-        a->dp[0] = b;
+        a->dp[0] = (sp_int_digit)b;
     }
 
     return MP_OKAY;
