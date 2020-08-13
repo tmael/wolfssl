@@ -6312,11 +6312,13 @@ int wolfSSL_EVP_CIPHER_CTX_iv_length(const WOLFSSL_EVP_CIPHER_CTX* ctx)
             return AES_BLOCK_SIZE;
 #endif
 #ifdef HAVE_AESGCM
+#if !defined(HAVE_SELFTEST) && !defined(HAVE_FIPS)
         case AES_128_GCM_TYPE :
         case AES_192_GCM_TYPE :
         case AES_256_GCM_TYPE :
             WOLFSSL_MSG("AES GCM");
             return GCM_NONCE_MID_SZ;
+#endif /* !HAVE_SELFTEST && !HAVE_FIPS */
 #endif
 #ifdef WOLFSSL_AES_COUNTER
         case AES_128_CTR_TYPE :
@@ -6409,6 +6411,7 @@ int wolfSSL_EVP_CIPHER_iv_length(const WOLFSSL_EVP_CIPHER* cipher)
     #endif
 #endif /* HAVE_AES_CBC */
 #ifdef HAVE_AESGCM
+#if !defined(HAVE_SELFTEST) && !defined(HAVE_FIPS)
     #ifdef WOLFSSL_AES_128
     if (EVP_AES_128_GCM && XSTRNCMP(name, EVP_AES_128_GCM, XSTRLEN(EVP_AES_128_GCM)) == 0)
         return GCM_NONCE_MID_SZ;
@@ -6421,6 +6424,7 @@ int wolfSSL_EVP_CIPHER_iv_length(const WOLFSSL_EVP_CIPHER* cipher)
     if (EVP_AES_256_GCM && XSTRNCMP(name, EVP_AES_256_GCM, XSTRLEN(EVP_AES_256_GCM)) == 0)
         return GCM_NONCE_MID_SZ;
     #endif
+#endif /* !HAVE_SELFTEST && !HAVE_FIPS */
 #endif /* HAVE_AESGCM */
 #ifdef WOLFSSL_AES_COUNTER
     #ifdef WOLFSSL_AES_128
