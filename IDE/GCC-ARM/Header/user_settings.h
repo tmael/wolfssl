@@ -122,7 +122,7 @@ extern "C" {
     #endif
 
     /* RSA PSS Support */
-    #if 0
+    #if 1
         #define WC_RSA_PSS
     #endif
 
@@ -135,7 +135,7 @@ extern "C" {
 
 /* ECC */
 #undef HAVE_ECC
-#if 1
+#if 0
     #define HAVE_ECC
 
     /* Manually define enabled curves */
@@ -211,7 +211,7 @@ extern "C" {
 
 /* DH */
 #undef  NO_DH
-#if 1
+#if 0
     /* Use table for DH instead of -lm (math) lib dependency */
     #if 0
         #define WOLFSSL_DH_CONST
@@ -233,26 +233,31 @@ extern "C" {
 /* AES */
 #undef NO_AES
 #if 1
-	#undef  HAVE_AES_CBC
-	#define HAVE_AES_CBC
+    #undef  HAVE_AES_CBC
+    #define HAVE_AES_CBC
 
-	#undef  HAVE_AESGCM
-    #define HAVE_AESGCM
+    #undef  HAVE_AESGCM
+    //#define HAVE_AESGCM
 
     /* GCM Method: GCM_SMALL, GCM_WORD32 or GCM_TABLE */
-    #define GCM_SMALL
+    //#define GCM_SMALL
 
+    /* enables AES ECB */
     #undef  WOLFSSL_AES_DIRECT
-    //#define WOLFSSL_AES_DIRECT
+    #define WOLFSSL_AES_DIRECT
 
-    #undef  HAVE_AES_ECB
-    //#define HAVE_AES_ECB
+    #define WOLFSSL_AES_256
+    #undef HAVE_AES_DECRYPT
 
     #undef  WOLFSSL_AES_COUNTER
     //#define WOLFSSL_AES_COUNTER
 
     #undef  HAVE_AESCCM
     //#define HAVE_AESCCM
+
+    #define NO_AES_128
+    #define NO_AES_192
+
 #else
     #define NO_AES
 #endif
@@ -296,7 +301,7 @@ extern "C" {
 /* ------------------------------------------------------------------------- */
 /* Sha */
 #undef NO_SHA
-#if 1
+#if 0
     /* 1k smaller, but 25% slower */
     //#define USE_SLOW_SHA
 #else
@@ -385,7 +390,7 @@ extern "C" {
 #if 0
     #define DEBUG_WOLFSSL
 #else
-    #if 0
+    #if 1
         #define NO_ERROR_STRINGS
     #endif
 #endif
@@ -450,23 +455,32 @@ extern "C" {
 
 /* Override Current Time */
 /* Allows custom "custom_time()" function to be used for benchmark */
-#define WOLFSSL_USER_CURRTIME
-#define WOLFSSL_GMTIME
-#define USER_TICKS
-extern unsigned long my_time(unsigned long* timer);
-#define XTIME my_time
 
+#ifndef  WOLFSSL_CONFIGURE_TESTING
+    #define WOLFSSL_USER_CURRTIME
+    #define WOLFSSL_GMTIME
+    #define USER_TICKS
+    extern unsigned long my_time(unsigned long* timer);
+    #define XTIME my_time
+#else
+
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* RNG */
 /* ------------------------------------------------------------------------- */
 
+#ifndef  WOLFSSL_CONFIGURE_TESTING
 /* Seed Source */
 /* Size of returned HW RNG value */
-#define CUSTOM_RAND_TYPE      unsigned int
-extern unsigned int my_rng_seed_gen(void);
-#undef  CUSTOM_RAND_GENERATE
-#define CUSTOM_RAND_GENERATE  my_rng_seed_gen
+    #define CUSTOM_RAND_TYPE      unsigned int
+    extern unsigned int my_rng_seed_gen(void);
+    #undef  CUSTOM_RAND_GENERATE
+    #define CUSTOM_RAND_GENERATE  my_rng_seed_gen
+#else
+   /* for testing only*/
+   #define WOLFSSL_GENSEED_FORTEST
+#endif
 
 /* Choose RNG method */
 #if 1
@@ -547,13 +561,13 @@ extern unsigned int my_rng_seed_gen(void);
 //#define HAVE_COMP_KEY
 
 #undef  HAVE_TLS_EXTENSIONS
-#define HAVE_TLS_EXTENSIONS
+//#define HAVE_TLS_EXTENSIONS
 
 #undef  HAVE_SUPPORTED_CURVES
-#define HAVE_SUPPORTED_CURVES
+//#define HAVE_SUPPORTED_CURVES
 
 #undef  WOLFSSL_BASE64_ENCODE
-#define WOLFSSL_BASE64_ENCODE
+//#define WOLFSSL_BASE64_ENCODE
 
 /* TLS Session Cache */
 #if 0
@@ -567,19 +581,22 @@ extern unsigned int my_rng_seed_gen(void);
 /* Disable Features */
 /* ------------------------------------------------------------------------- */
 #undef  NO_WOLFSSL_SERVER
-//#define NO_WOLFSSL_SERVER
+#define NO_WOLFSSL_SERVER
 
 #undef  NO_WOLFSSL_CLIENT
-//#define NO_WOLFSSL_CLIENT
+#define NO_WOLFSSL_CLIENT
 
 #undef  NO_CRYPT_TEST
 //#define NO_CRYPT_TEST
 
 #undef  NO_CRYPT_BENCHMARK
-//#define NO_CRYPT_BENCHMARK
+#ifndef  WOLFSSL_CONFIGURE_TESTING
+    #define NO_CRYPT_BENCHMARK
+#else
+#endif
 
 #undef  WOLFCRYPT_ONLY
-//#define WOLFCRYPT_ONLY
+#define WOLFCRYPT_ONLY
 
 /* In-lining of misc.c functions */
 /* If defined, must include wolfcrypt/src/misc.c in build */
@@ -593,8 +610,11 @@ extern unsigned int my_rng_seed_gen(void);
 #undef  NO_WRITEV
 #define NO_WRITEV
 
-#undef  NO_MAIN_DRIVER
-#define NO_MAIN_DRIVER
+
+#ifndef  WOLFSSL_CONFIGURE_TESTING
+    #undef  NO_MAIN_DRIVER
+    #define NO_MAIN_DRIVER
+#endif
 
 #undef  NO_DEV_RANDOM
 #define NO_DEV_RANDOM
@@ -624,16 +644,35 @@ extern unsigned int my_rng_seed_gen(void);
 #define NO_PWDBASED
 
 #undef  NO_CODING
-//#define NO_CODING
+#define NO_CODING
 
 #undef  NO_ASN_TIME
-//#define NO_ASN_TIME
+#define NO_ASN_TIME
 
 #undef  NO_CERTS
-//#define NO_CERTS
+#define NO_CERTS
 
 #undef  NO_SIG_WRAPPER
-//#define NO_SIG_WRAPPER
+#define NO_SIG_WRAPPER
+
+// Additional
+// #define NO_HMAC
+//#define NO_HASH_WRAPPER
+
+#define NO_PKCS8
+#define NO_PKCS12
+
+// // #define WOLFSSL_NO_PEM
+
+// // #define WOLFSSL_SP_MATH
+#define WOLFSSL_RSA_VERIFY_ONLY
+#define WOLFSSL_RSA_PUBLIC_ONLY
+#define WC_NO_RSA_OAEP /* Disable non-PSS padding schemes for RSA */
+#define NO_HMAC
+// #define NO_ASN
+
+#define NO_BIG_INT
+// #define WOLFCRYPT_ONLY_MIN_ASN
 
 #ifdef __cplusplus
 }

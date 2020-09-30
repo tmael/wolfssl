@@ -4988,7 +4988,7 @@ int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen)
 }
 
 #endif /* NO_DSA */
-
+#ifndef WOLFCRYPT_ONLY_SMALL_ASN
 void InitDecodedCert(DecodedCert* cert,
                      const byte* source, word32 inSz, void* heap)
 {
@@ -5141,7 +5141,7 @@ static int StoreRsaKey(DecodedCert* cert, word32 bitStringEnd)
     return 0;
 }
 #endif /* !NO_RSA */
-
+#endif /* !WOLFCRYPT_ONLY_SMALL_ASN */
 #ifdef HAVE_ECC
 
     /* return 0 on success if the ECC curve oid sum is supported */
@@ -5160,7 +5160,7 @@ static int StoreRsaKey(DecodedCert* cert, word32 bitStringEnd)
     }
 
 #endif /* HAVE_ECC */
-
+#ifndef WOLFCRYPT_ONLY_SMALL_ASN
 static int GetKey(DecodedCert* cert)
 {
     int length;
@@ -5425,7 +5425,7 @@ static int GetKey(DecodedCert* cert)
             return ASN_UNKNOWN_OID_E;
     }
 }
-
+#endif /* !WOLFCRYPT_ONLY_SMALL_ASN */
 #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
 #if defined(HAVE_ECC)
 /* Converts ECC curve enum values in ecc_curve_id to the associated OpenSSL NID
@@ -5542,7 +5542,7 @@ int wc_OBJ_sn2nid(const char *sn)
     return NID_undef;
 }
 #endif
-
+#ifndef WOLFCRYPT_ONLY_SMALL_ASN
 /* Routine for calculating hashId */
 int CalcHashId(const byte* data, word32 len, byte* hash)
 {
@@ -6086,7 +6086,7 @@ int GetName(DecodedCert* cert, int nameType, int maxIdx)
 #endif
     return 0;
 }
-
+#endif /* !WOLFCRYPT_ONLY_SMALL_ASN */
 
 #ifndef NO_ASN_TIME
 
@@ -6438,7 +6438,7 @@ int wc_GetTime(void* timePtr, word32 timeSize)
 
 #endif /* !NO_ASN_TIME */
 
-
+#ifndef WOLFCRYPT_ONLY_SMALL_ASN
 /* Get date buffer, format and length. Returns 0=success or error */
 static int GetDateInfo(const byte* source, word32* idx, const byte** pDate,
                         byte* pFormat, int* pLength, word32 maxIdx)
@@ -6553,7 +6553,7 @@ int wc_GetDateInfo(const byte* certDate, int certDateSz, const byte** date,
 
     return 0;
 }
-
+#endif /* !WOLFCRYPT_ONLY_SMALL_ASN */
 #ifndef NO_ASN_TIME
 int wc_GetDateAsCalendarTime(const byte* date, int length, byte format,
     struct tm* timearg)
@@ -6593,7 +6593,7 @@ int wc_GetCertDates(Cert* cert, struct tm* before, struct tm* after)
 }
 #endif /* WOLFSSL_CERT_GEN && WOLFSSL_ALT_NAMES */
 #endif /* !NO_ASN_TIME */
-
+#ifndef WOLFCRYPT_ONLY_SMALL_ASN
 /* parses certificate up to point of X.509 public key
  *
  * if cert date is invalid then badDate gets set to error value, otherwise is 0
@@ -6758,7 +6758,7 @@ word32 SetExplicit(byte number, word32 len, byte* output)
     output[0] = ASN_CONSTRUCTED | ASN_CONTEXT_SPECIFIC | number;
     return SetLength(len, output + 1) + 1;
 }
-
+#endif /* !WOLFCRYPT_ONLY_SMALL_ASN */
 
 #if defined(HAVE_ECC) && defined(HAVE_ECC_KEY_EXPORT)
 
@@ -6815,6 +6815,7 @@ static WC_INLINE int IsSigAlgoECDSA(int algoOID)
 }
 #endif
 
+#ifndef WOLFCRYPT_ONLY_SMALL_ASN
 word32 SetAlgoID(int algoOID, byte* output, int type, int curveSz)
 {
     word32 tagSz, idSz, seqSz, algoSz = 0;
@@ -6889,7 +6890,7 @@ word32 wc_EncodeSignature(byte* out, const byte* digest, word32 digSz,
 
     return encDigSz + algoSz + seqSz;
 }
-
+#endif /* !WOLFCRYPT_ONLY_SMALL_ASN */
 
 #ifndef NO_CERTS
 
@@ -9726,6 +9727,7 @@ int SetSerialNumber(const byte* sn, word32 snSz, byte* output,
 
 #endif /* !NO_CERTS */
 
+#ifndef WOLFCRYPT_ONLY_SMALL_ASN
 int GetSerialNumber(const byte* input, word32* inOutIdx,
     byte* serial, int* serialSz, word32 maxIdx)
 {
@@ -9759,7 +9761,7 @@ int GetSerialNumber(const byte* input, word32* inOutIdx,
 
     return result;
 }
-
+#endif /* !WOLFCRYPT_ONLY_SMALL_ASN */
 #ifndef NO_CERTS
 
 int AllocDer(DerBuffer** pDer, word32 length, int type, void* heap)
@@ -17260,7 +17262,7 @@ int CompareOcspReqResp(OcspRequest* req, OcspResponse* resp)
 
 #endif /* HAVE_OCSP */
 
-
+#ifndef WOLFCRYPT_ONLY_SMALL_ASN
 /* store WC_SHA hash of NAME */
 int GetNameHash(const byte* source, word32* idx, byte* hash,
                              int maxIdx)
@@ -17296,7 +17298,7 @@ int GetNameHash(const byte* source, word32* idx, byte* hash,
 
     return ret;
 }
-
+#endif /* !WOLFCRYPT_ONLY_SMALL_ASN */
 
 #ifdef HAVE_CRL
 
