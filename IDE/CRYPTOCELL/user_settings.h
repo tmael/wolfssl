@@ -69,7 +69,7 @@ extern "C" {
 #define SIZEOF_LONG_LONG 8
 
 #undef USE_FAST_MATH
-#if 1
+#if 0
     #define USE_FAST_MATH
 
     #undef  TFM_TIMING_RESISTANT
@@ -81,7 +81,7 @@ extern "C" {
 
 /* Wolf Single Precision Math */
 #undef WOLFSSL_SP
-#if 0
+#if 1
     #define WOLFSSL_SP
     #define WOLFSSL_SP_SMALL      /* use smaller version of code */
     #define WOLFSSL_HAVE_SP_RSA
@@ -93,6 +93,7 @@ extern "C" {
     /* Assembly */
     //#define WOLFSSL_SP_ASM      /* required if using the ASM versions */
     //#define WOLFSSL_SP_ARM_CORTEX_M_ASM
+    #define WOLFSSL_USE_FLASHMEM
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -145,7 +146,7 @@ extern "C" {
         /* Manual Curve Selection */
         //#define HAVE_ECC192
         //#define HAVE_ECC224
-        #undef NO_ECC256
+        #define NO_ECC256
         #define HAVE_ECC384
         //#define HAVE_ECC521
     #endif
