@@ -1,6 +1,6 @@
 /* asn.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -35,63 +35,23 @@ that can be serialized and deserialized in a cross-platform way.
 
 /*
 ASN Options:
- * NO_ASN_TIME: Disables time parts of the ASN code for systems without an RTC
-    or wishing to save space.
- * IGNORE_NAME_CONSTRAINTS: Skip ASN name checks.
- * ASN_DUMP_OID: Allows dump of OID information for debugging.
- * RSA_DECODE_EXTRA: Decodes extra information in RSA public key.
  * WOLFSSL_CERT_GEN: Cert generation. Saves extra certificate info in GetName.
- * WOLFSSL_NO_ASN_STRICT: Disable strict RFC compliance checks to
-    restore 3.13.0 behavior.
- * WOLFSSL_NO_OCSP_OPTIONAL_CERTS: Skip optional OCSP certs (responder issuer
-    must still be trusted)
- * WOLFSSL_NO_TRUSTED_CERTS_VERIFY: Workaround for situation where entire cert
-    chain is not loaded. This only matches on subject and public key and
-    does not perform a PKI validation, so it is not a secure solution.
-    Only enabled for OCSP.
- * WOLFSSL_NO_OCSP_ISSUER_CHECK: Can be defined for backwards compatibility to
-    disable checking of OCSP subject hash with issuer hash.
- * WOLFSSL_SMALL_CERT_VERIFY: Verify the certificate signature without using
-    DecodedCert. Doubles up on some code but allows smaller dynamic memory
-    usage.
- * WOLFSSL_NO_OCSP_DATE_CHECK: Disable date checks for OCSP responses. This
-    may be required when the system's real-time clock is not very accurate.
-    It is recommended to enforce the nonce check instead if possible.
- * WOLFSSL_FORCE_OCSP_NONCE_CHECK: Require nonces to be available in OCSP
-    responses. The nonces are optional and may not be supported by all
-    responders. If it can be ensured that the used responder sends nonces this
-    option may improve security.
 */
 
 #ifndef NO_ASN
 
 #include <wolfssl/wolfcrypt/asn.h>
-#include <wolfssl/wolfcrypt/coding.h>
-#include <wolfssl/wolfcrypt/md2.h>
 #include <wolfssl/wolfcrypt/hmac.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
-#include <wolfssl/wolfcrypt/pwdbased.h>
-#include <wolfssl/wolfcrypt/des3.h>
 #include <wolfssl/wolfcrypt/aes.h>
-#include <wolfssl/wolfcrypt/rc2.h>
-#include <wolfssl/wolfcrypt/wc_encrypt.h>
 #include <wolfssl/wolfcrypt/logging.h>
-
 #include <wolfssl/wolfcrypt/random.h>
-#include <wolfssl/wolfcrypt/hash.h>
+
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else
     #define WOLFSSL_MISC_INCLUDED
     #include <wolfcrypt/src/misc.c>
-#endif
-
-#ifndef NO_RC4
-    #include <wolfssl/wolfcrypt/arc4.h>
-#endif
-
-#ifdef HAVE_NTRU
-    #include "libntruencrypt/ntru_crypto.h"
 #endif
 
 #if defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)
@@ -105,38 +65,6 @@ ASN Options:
 #ifdef HAVE_ECC
     #include <wolfssl/wolfcrypt/ecc.h>
 #endif
-
-#ifdef HAVE_ED25519
-    #include <wolfssl/wolfcrypt/ed25519.h>
-#endif
-
-#ifdef HAVE_ED448
-    #include <wolfssl/wolfcrypt/ed448.h>
-#endif
-
-#ifndef NO_RSA
-    #include <wolfssl/wolfcrypt/rsa.h>
-#if defined(WOLFSSL_XILINX_CRYPT) || defined(WOLFSSL_CRYPTOCELL)
-extern int wc_InitRsaHw(RsaKey* key);
-#endif
-#endif
-
-#ifndef NO_DSA
-    #include <wolfssl/wolfcrypt/dsa.h>
-#else
-    typedef void* DsaKey;
-#endif
-
-#ifdef WOLF_CRYPTO_CB
-    #include <wolfssl/wolfcrypt/cryptocb.h>
-#endif
-
-#ifdef _MSC_VER
-    /* 4996 warning to use MS extensions e.g., strcpy_s instead of XSTRNCPY */
-    #pragma warning(disable: 4996)
-#endif
-
-#define ERROR_OUT(err, eLabel) { ret = (err); goto eLabel; }
 
 int GetLength(const byte* input, word32* inOutIdx, int* len,
                            word32 maxIdx)
@@ -358,14 +286,7 @@ static int GetASNInt(const byte* input, word32* inOutIdx, int* len,
     return 0;
 }
 
-
 #ifdef HAVE_ECC
-#ifndef NO_SHA
-    static const char sigSha1wEcdsaName[] = "SHAwECDSA";
-#endif
-#ifdef WOLFSSL_SHA224
-    static const char sigSha224wEcdsaName[] = "SHA224wECDSA";
-#endif
 #ifndef NO_SHA256
     static const char sigSha256wEcdsaName[] = "SHA256wECDSA";
 #endif
@@ -510,13 +431,6 @@ int GetInt(mp_int* mpi, const byte* input, word32* inOutIdx, word32 maxIdx)
         return ASN_GETINT_E;
     }
 
-#ifdef HAVE_WOLF_BIGINT
-    if (wc_bigint_from_unsigned_bin(&mpi->raw, input + idx, length) != 0) {
-        mp_clear(mpi);
-        return ASN_GETINT_E;
-    }
-#endif /* HAVE_WOLF_BIGINT */
-
     *inOutIdx = idx + length;
 
     return 0;
@@ -647,40 +561,6 @@ static int SkipObjectId(const byte* input, word32* inOutIdx, word32 maxIdx)
     return 0;
 }
 
-/* RSA (with CertGen or KeyGen) OR ECC OR ED25519 OR ED448 (with CertGen or
- * KeyGen) */
-#if (!defined(NO_RSA) && !defined(HAVE_USER_RSA) && \
-        (defined(WOLFSSL_CERT_GEN) || defined(WOLFSSL_KEY_GEN) || defined(OPENSSL_EXTRA))) || \
-    (defined(HAVE_ECC) && defined(HAVE_ECC_KEY_EXPORT)) || \
-    ((defined(HAVE_ED25519) || defined(HAVE_ED448)) && \
-        (defined(WOLFSSL_CERT_GEN) || defined(WOLFSSL_KEY_GEN) || defined(OPENSSL_EXTRA))) || \
-    (!defined(NO_DSA) && !defined(HAVE_SELFTEST) && defined(WOLFSSL_KEY_GEN))
-
-/* Set the DER/BER encoding of the ASN.1 BIT_STRING header.
- *
- * len         Length of data to encode.
- * unusedBits  The number of unused bits in the last byte of data.
- *             That is, the number of least significant zero bits before a one.
- *             The last byte is the most-significant non-zero byte of a number.
- * output      Buffer to write into.
- * returns the number of bytes added to the buffer.
- */
-word32 SetBitString(word32 len, byte unusedBits, byte* output)
-{
-    word32 idx = 0;
-
-    if (output)
-        output[idx] = ASN_BIT_STRING;
-    idx++;
-
-    idx += SetLength(len + 1, output ? output + idx : NULL);
-    if (output)
-        output[idx] = unusedBits;
-    idx++;
-
-    return idx;
-}
-#endif /* !NO_RSA || HAVE_ECC || HAVE_ED25519 || HAVE_ED448 */
 /* Get date buffer, format and length. Returns 0=success or error */
 static int GetDateInfo(const byte* source, word32* idx, const byte** pDate,
                         byte* pFormat, int* pLength, word32 maxIdx)
@@ -1061,13 +941,8 @@ int wc_EccPrivateKeyDecode(const byte* input, word32* inOutIdx, ecc_key* key,
     byte   b;
     int    ret = 0;
     int    curve_id = ECC_CURVE_DEF;
-#ifdef WOLFSSL_SMALL_STACK
-    byte* priv;
-    byte* pub = NULL;
-#else
     byte priv[ECC_MAXSIZE+1];
     byte pub[2*(ECC_MAXSIZE+1)]; /* public key has two parts plus header */
-#endif
     byte* pubData = NULL;
 
     if (input == NULL || inOutIdx == NULL || key == NULL || inSz == 0)
@@ -1095,12 +970,6 @@ int wc_EccPrivateKeyDecode(const byte* input, word32* inOutIdx, ecc_key* key,
 
     if (privSz > ECC_MAXSIZE)
         return BUFFER_E;
-
-#ifdef WOLFSSL_SMALL_STACK
-    priv = (byte*)XMALLOC(privSz, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-    if (priv == NULL)
-        return MEMORY_E;
-#endif
 
     /* priv key */
     XMEMCPY(priv, &input[*inOutIdx], privSz);
@@ -1149,17 +1018,9 @@ int wc_EccPrivateKeyDecode(const byte* input, word32* inOutIdx, ecc_key* key,
                 if (pubSz > 2*(ECC_MAXSIZE+1))
                     ret = BUFFER_E;
                 else {
-            #ifdef WOLFSSL_SMALL_STACK
-                    pub = (byte*)XMALLOC(pubSz, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-                    if (pub == NULL)
-                        ret = MEMORY_E;
-                    else
-            #endif
-                    {
-                        XMEMCPY(pub, &input[*inOutIdx], pubSz);
-                        *inOutIdx += length;
-                        pubData = pub;
-                    }
+                     XMEMCPY(pub, &input[*inOutIdx], pubSz);
+                     *inOutIdx += length;
+                     pubData = pub;
                 }
             }
         }
@@ -1170,92 +1031,8 @@ int wc_EccPrivateKeyDecode(const byte* input, word32* inOutIdx, ecc_key* key,
                                                                       curve_id);
     }
 
-#ifdef WOLFSSL_SMALL_STACK
-    XFREE(priv, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-    XFREE(pub,  key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-#endif
-
     return ret;
 }
-
-
-#ifdef WOLFSSL_CUSTOM_CURVES
-static void ByteToHex(byte n, char* str)
-{
-    const char hexChar[] = { '0', '1', '2', '3', '4', '5', '6', '7',
-                                    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
-    str[0] = hexChar[n >> 4];
-    str[1] = hexChar[n & 0xf];
-}
-
-/* returns 0 on success */
-static int ASNToHexString(const byte* input, word32* inOutIdx, char** out,
-                          word32 inSz, void* heap, int heapType)
-{
-    int len;
-    int i;
-    char* str;
-    word32 localIdx;
-    byte   tag;
-
-    if (*inOutIdx >= inSz) {
-        return BUFFER_E;
-    }
-
-    localIdx = *inOutIdx;
-    if (GetASNTag(input, &localIdx, &tag, inSz) == 0 && tag == ASN_INTEGER) {
-        if (GetASNInt(input, inOutIdx, &len, inSz) < 0)
-            return ASN_PARSE_E;
-    }
-    else {
-        if (GetOctetString(input, inOutIdx, &len, inSz) < 0)
-            return ASN_PARSE_E;
-    }
-
-    str = (char*)XMALLOC(len * 2 + 1, heap, heapType);
-    for (i=0; i<len; i++)
-        ByteToHex(input[*inOutIdx + i], str + i*2);
-    str[len*2] = '\0';
-
-    *inOutIdx += len;
-    *out = str;
-
-    (void)heap;
-    (void)heapType;
-
-    return 0;
-}
-#endif /* WOLFSSL_CUSTOM_CURVES */
-
-#ifdef WOLFSSL_CUSTOM_CURVES
-static int EccKeyParamCopy(char** dst, char* src)
-{
-    int ret = 0;
-#ifdef WOLFSSL_ECC_CURVE_STATIC
-    word32 length;
-#endif
-
-    if (dst == NULL || src == NULL)
-        return BAD_FUNC_ARG;
-
-#ifndef WOLFSSL_ECC_CURVE_STATIC
-    *dst = src;
-#else
-    length = (int)XSTRLEN(src) + 1;
-    if (length > MAX_ECC_STRING) {
-        WOLFSSL_MSG("ECC Param too large for buffer");
-        ret = BUFFER_E;
-    }
-    else {
-        XSTRNCPY(*dst, src, length);
-    }
-    XFREE(src, key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-#endif
-
-    return ret;
-}
-#endif /* WOLFSSL_CUSTOM_CURVES */
 
 int wc_EccPublicKeyDecode(const byte* input, word32* inOutIdx,
                           ecc_key* key, word32 inSz)
@@ -1318,144 +1095,7 @@ int wc_EccPublicKeyDecode(const byte* input, word32* inOutIdx,
     localIdx = *inOutIdx;
     if (GetASNTag(input, &localIdx, &tag, inSz) == 0 &&
             tag == (ASN_SEQUENCE | ASN_CONSTRUCTED)) {
-#ifdef WOLFSSL_CUSTOM_CURVES
-        ecc_set_type* curve;
-        int len;
-        char* point = NULL;
-
-        ret = 0;
-
-        curve = (ecc_set_type*)XMALLOC(sizeof(*curve), key->heap,
-                                                       DYNAMIC_TYPE_ECC_BUFFER);
-        if (curve == NULL)
-            ret = MEMORY_E;
-
-        if (ret == 0) {
-            static const char customName[] = "Custom";
-            XMEMSET(curve, 0, sizeof(*curve));
-        #ifndef WOLFSSL_ECC_CURVE_STATIC
-            curve->name = customName;
-        #else
-            XMEMCPY((void*)curve->name, customName, sizeof(customName));
-        #endif
-            curve->id = ECC_CURVE_CUSTOM;
-
-            if (GetSequence(input, inOutIdx, &length, inSz) < 0)
-                ret = ASN_PARSE_E;
-        }
-
-        if (ret == 0) {
-            GetInteger7Bit(input, inOutIdx, inSz);
-            if (GetSequence(input, inOutIdx, &length, inSz) < 0)
-                ret = ASN_PARSE_E;
-        }
-        if (ret == 0) {
-            char* p = NULL;
-            SkipObjectId(input, inOutIdx, inSz);
-            ret = ASNToHexString(input, inOutIdx, &p, inSz,
-                                            key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-            if (ret == 0)
-                ret = EccKeyParamCopy((char**)&curve->prime, p);
-        }
-        if (ret == 0) {
-            curve->size = (int)XSTRLEN(curve->prime) / 2;
-
-            if (GetSequence(input, inOutIdx, &length, inSz) < 0)
-                ret = ASN_PARSE_E;
-        }
-        if (ret == 0) {
-            char* af = NULL;
-            ret = ASNToHexString(input, inOutIdx, &af, inSz,
-                                            key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-            if (ret == 0)
-                ret = EccKeyParamCopy((char**)&curve->Af, af);
-        }
-        if (ret == 0) {
-            char* bf = NULL;
-            ret = ASNToHexString(input, inOutIdx, &bf, inSz,
-                                            key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-            if (ret == 0)
-                ret = EccKeyParamCopy((char**)&curve->Bf, bf);
-        }
-        if (ret == 0) {
-            localIdx = *inOutIdx;
-            if (*inOutIdx < inSz && GetASNTag(input, &localIdx, &tag, inSz)
-                    == 0 && tag == ASN_BIT_STRING) {
-                len = 0;
-                ret = GetASNHeader(input, ASN_BIT_STRING, inOutIdx, &len, inSz);
-                *inOutIdx += len;
-            }
-        }
-        if (ret == 0) {
-            ret = ASNToHexString(input, inOutIdx, (char**)&point, inSz,
-                                            key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-
-            /* sanity check that point buffer is not smaller than the expected
-             * size to hold ( 0 4 || Gx || Gy )
-             * where Gx and Gy are each the size of curve->size * 2 */
-            if (ret == 0 && (int)XSTRLEN(point) < (curve->size * 4) + 2) {
-                XFREE(point, key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-                ret = BUFFER_E;
-            }
-        }
-        if (ret == 0) {
-        #ifndef WOLFSSL_ECC_CURVE_STATIC
-            curve->Gx = (const char*)XMALLOC(curve->size * 2 + 2, key->heap,
-                                                       DYNAMIC_TYPE_ECC_BUFFER);
-            curve->Gy = (const char*)XMALLOC(curve->size * 2 + 2, key->heap,
-                                                       DYNAMIC_TYPE_ECC_BUFFER);
-            if (curve->Gx == NULL || curve->Gy == NULL) {
-                XFREE(point, key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-                ret = MEMORY_E;
-            }
-        #else
-            if (curve->size * 2 + 2 > MAX_ECC_STRING) {
-                WOLFSSL_MSG("curve size is too large to fit in buffer");
-                ret = BUFFER_E;
-            }
-        #endif
-        }
-        if (ret == 0) {
-            char* o = NULL;
-
-            XMEMCPY((char*)curve->Gx, point + 2, curve->size * 2);
-            XMEMCPY((char*)curve->Gy, point + curve->size * 2 + 2,
-                                                               curve->size * 2);
-            ((char*)curve->Gx)[curve->size * 2] = '\0';
-            ((char*)curve->Gy)[curve->size * 2] = '\0';
-            XFREE(point, key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-            ret = ASNToHexString(input, inOutIdx, &o, inSz,
-                                            key->heap, DYNAMIC_TYPE_ECC_BUFFER);
-            if (ret == 0)
-                ret = EccKeyParamCopy((char**)&curve->order, o);
-        }
-        if (ret == 0) {
-            curve->cofactor = GetInteger7Bit(input, inOutIdx, inSz);
-
-        #ifndef WOLFSSL_ECC_CURVE_STATIC
-            curve->oid = NULL;
-        #else
-            XMEMSET((void*)curve->oid, 0, sizeof(curve->oid));
-        #endif
-            curve->oidSz = 0;
-            curve->oidSum = 0;
-
-            if (wc_ecc_set_custom_curve(key, curve) < 0) {
-                ret = ASN_PARSE_E;
-            }
-        #ifdef WOLFSSL_CUSTOM_CURVES
-            key->deallocSet = 1;
-        #endif
-            curve = NULL;
-        }
-        if (curve != NULL)
-            wc_ecc_free_curve(curve, key->heap);
-
-        if (ret < 0)
-            return ret;
-#else
         return ASN_PARSE_E;
-#endif /* WOLFSSL_CUSTOM_CURVES */
     }
     else {
         /* ecc params information */
@@ -1500,8 +1140,6 @@ int wc_EccPublicKeyDecode(const byte* input, word32* inOutIdx,
 }
 
 #endif /* HAVE_ECC */
-
-#undef ERROR_OUT
 
 #endif /* !NO_ASN */
 

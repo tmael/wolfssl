@@ -2090,9 +2090,9 @@ extern void uITRON4_free(void *p) ;
     #if defined(HAVE_IO_POOL) || defined(XMALLOC_USER) || defined(NO_WOLFSSL_MEMORY)
          #error static memory cannot be used with HAVE_IO_POOL, XMALLOC_USER or NO_WOLFSSL_MEMORY
     #endif
-    #if !defined(USE_FAST_MATH) && !defined(NO_BIG_INT)
-        #error static memory requires fast math please define USE_FAST_MATH
-    #endif
+    // #if !defined(USE_FAST_MATH) && !defined(NO_BIG_INT)
+    //     #error static memory requires fast math please define USE_FAST_MATH
+    // #endif
     #ifdef WOLFSSL_SMALL_STACK
         #error static memory does not support small stack please undefine
     #endif

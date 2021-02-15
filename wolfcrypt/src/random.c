@@ -1,6 +1,6 @@
 /* random.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -44,10 +44,6 @@ This library contains implementation for the random number generator.
 
 #include <wolfssl/wolfcrypt/sha256.h>
 
-#ifdef WOLF_CRYPTO_CB
-    #include <wolfssl/wolfcrypt/cryptocb.h>
-#endif
-
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else
@@ -55,16 +51,11 @@ This library contains implementation for the random number generator.
     #include <wolfcrypt/src/misc.c>
 #endif
 
-#if defined(WOLFSSL_SGX)
-    #include <sgx_trts.h>
-#else
-    /* include headers that may be needed to get good seed */
-    #include <fcntl.h>
-    #ifndef EBSNET
-        #include <unistd.h>
-    #endif
+/* include headers that may be needed to get good seed */
+#include <fcntl.h>
+#ifndef EBSNET
+	#include <unistd.h>
 #endif
-
 
 /* Start NIST DRBG code */
 #ifdef HAVE_HASHDRBG
@@ -170,19 +161,9 @@ static int Hash_df(DRBG_internal* drbg, byte* out, word32 outSz, byte type,
 #else
     wc_Sha256 sha[1];
 #endif
-#ifdef WC_ASYNC_ENABLE_SHA256
-    DECLARE_VAR(digest, byte, WC_SHA256_DIGEST_SIZE, drbg->heap);
-    if (digest == NULL)
-        return MEMORY_E;
-#else
     byte digest[WC_SHA256_DIGEST_SIZE];
-#endif
 
     (void)drbg;
-#ifdef WC_ASYNC_ENABLE_SHA256
-    if (digest == NULL)
-        return DRBG_FAILURE;
-#endif
 
 #ifdef LITTLE_ENDIAN_ORDER
     bits = ByteReverseWord32(bits);
@@ -192,11 +173,7 @@ static int Hash_df(DRBG_internal* drbg, byte* out, word32 outSz, byte type,
 
     for (i = 0, ctr = 1; i < len; i++, ctr++) {
 #ifndef WOLFSSL_SMALL_STACK_CACHE
-    #if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
-        ret = wc_InitSha256_ex(sha, drbg->heap, drbg->devId);
-    #else
         ret = wc_InitSha256(sha);
-    #endif
         if (ret != 0)
             break;
 
@@ -236,10 +213,6 @@ static int Hash_df(DRBG_internal* drbg, byte* out, word32 outSz, byte type,
     }
 
     ForceZero(digest, WC_SHA256_DIGEST_SIZE);
-
-#ifdef WC_ASYNC_ENABLE_SHA256
-    FREE_VAR(digest, drbg->heap);
-#endif
 
     return (ret == 0) ? DRBG_SUCCESS : DRBG_FAILURE;
 }
@@ -299,15 +272,8 @@ static int Hash_gen(DRBG_internal* drbg, byte* out, word32 outSz, const byte* V)
     int i;
     int len;
     word32 checkBlock;
-#ifdef WOLFSSL_SMALL_STACK_CACHE
-    wc_Sha256* sha = &drbg->sha256;
-#else
     wc_Sha256 sha[1];
-#endif
-#ifdef WC_ASYNC_ENABLE_SHA256
-#else
     byte digest[WC_SHA256_DIGEST_SIZE];
-#endif
 
     /* Special case: outSz is 0 and out is NULL. wc_Generate a block to save for
      * the continuous test. */
@@ -319,11 +285,7 @@ static int Hash_gen(DRBG_internal* drbg, byte* out, word32 outSz, const byte* V)
     XMEMCPY(data, V, sizeof(data));
     for (i = 0; i < len; i++) {
 #ifndef WOLFSSL_SMALL_STACK_CACHE
-    #if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
-        ret = wc_InitSha256_ex(sha, drbg->heap, drbg->devId);
-    #else
         ret = wc_InitSha256(sha);
-    #endif
         if (ret == 0)
 #endif
             ret = wc_Sha256Update(sha, data, sizeof(data));
@@ -399,33 +361,21 @@ static WC_INLINE void array_add(byte* d, word32 dLen, const byte* s, word32 sLen
 static int Hash_DRBG_Generate(DRBG_internal* drbg, byte* out, word32 outSz)
 {
     int ret;
-#ifdef WOLFSSL_SMALL_STACK_CACHE
-    wc_Sha256* sha = &drbg->sha256;
-#else
     wc_Sha256 sha[1];
-#endif
     byte type;
     word32 reseedCtr;
 
     if (drbg->reseedCtr == RESEED_INTERVAL) {
         return DRBG_NEED_RESEED;
     } else {
-    #ifdef WC_ASYNC_ENABLE_SHA256
-
-    #else
         byte digest[WC_SHA256_DIGEST_SIZE];
-    #endif
         type = drbgGenerateH;
         reseedCtr = drbg->reseedCtr;
 
         ret = Hash_gen(drbg, out, outSz, drbg->V);
         if (ret == DRBG_SUCCESS) {
 #ifndef WOLFSSL_SMALL_STACK_CACHE
-        #if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
-            ret = wc_InitSha256_ex(sha, drbg->heap, drbg->devId);
-        #else
             ret = wc_InitSha256(sha);
-        #endif
             if (ret == 0)
 #endif
                 ret = wc_Sha256Update(sha, &type, sizeof(type));
@@ -451,9 +401,6 @@ static int Hash_DRBG_Generate(DRBG_internal* drbg, byte* out, word32 outSz)
             drbg->reseedCtr++;
         }
         ForceZero(digest, WC_SHA256_DIGEST_SIZE);
-    #ifdef WC_ASYNC_ENABLE_SHA256
-        FREE_VAR(digest, drbg->heap);
-    #endif
     }
 
     return (ret == 0) ? DRBG_SUCCESS : DRBG_FAILURE;
@@ -467,11 +414,8 @@ static int Hash_DRBG_Instantiate(DRBG_internal* drbg, const byte* seed, word32 s
     int ret = DRBG_FAILURE;
 
     XMEMSET(drbg, 0, sizeof(DRBG_internal));
-#if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
-#else
     (void)heap;
     (void)devId;
-#endif
 
     if (Hash_df(drbg, drbg->V, sizeof(drbg->V), drbgInitV, seed, seedSz,
                                               nonce, nonceSz) == DRBG_SUCCESS &&
@@ -550,10 +494,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
 #else
     rng->heap = heap;
 #endif
-#if defined(WOLFSSL_ASYNC_CRYPT) || defined(WOLF_CRYPTO_CB)
-#else
     (void)devId;
-#endif
 
 #ifdef HAVE_HASHDRBG
     /* init the DBRG to known values */
@@ -569,10 +510,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
         seedSz = MAX_SEED_SZ;
 
     if (wc_RNG_HealthTestLocal(0) == 0) {
-    #ifdef WC_ASYNC_ENABLE_SHA256
-    #else
         byte seed[MAX_SEED_SZ];
-    #endif
 
 #if !defined(WOLFSSL_NO_MALLOC) || defined(WOLFSSL_STATIC_MEMORY)
         rng->drbg =
@@ -702,15 +640,6 @@ int wc_RNG_GenerateBlock(WC_RNG* rng, byte* output, word32 sz)
 
     if (sz == 0)
         return 0; 
-
-#ifdef WOLF_CRYPTO_CB
-    if (rng->devId != INVALID_DEVID) {
-        ret = wc_CryptoCb_RandomBlock(rng, output, sz);
-        if (ret != CRYPTOCB_UNAVAILABLE)
-            return ret;
-        /* fall-through when unavailable */
-    }
-#endif
 
 #ifdef CUSTOM_RAND_GENERATE_BLOCK
     XMEMSET(output, 0, sz);

@@ -1,6 +1,6 @@
 /* ecc.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -178,20 +178,6 @@ const ecc_set_type ecc_sets[] = {
     },
     #endif /* HAVE_ECC_BRAINPOOL */
 #endif /* ECC384 */
-
-#if defined(WOLFSSL_CUSTOM_CURVES) && defined(ECC_CACHE_CURVE)
-    /* place holder for custom curve index for cache */
-    {
-        1, /* non-zero */
-        ECC_CURVE_CUSTOM,
-        #ifndef WOLFSSL_ECC_CURVE_STATIC
-            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        #else
-            {0},{0},{0},{0},{0},{0},{0},{0},
-        #endif
-        0, 0, 0
-    },
-#endif
     {
         0,
         ECC_CURVE_INVALID,
@@ -328,18 +314,10 @@ static int wc_ecc_curve_load(const ecc_set_type* dp, ecc_curve_spec** pCurve,
     int ret = 0;
     ecc_curve_spec* curve;
     byte load_items = 0; /* mask of items to load */
-#ifdef ECC_CACHE_CURVE
-    int x;
-#endif
 
     if (dp == NULL || pCurve == NULL)
         return BAD_FUNC_ARG;
-
-#ifdef ECC_CACHE_CURVE
-
-#else
     curve = *pCurve;
-#endif /* ECC_CACHE_CURVE */
 
     /* make sure the curve is initialized */
     if (curve->dp != dp) {
@@ -451,16 +429,9 @@ int wc_ecc_set_curve(ecc_key* key, int keysize, int curve_id)
                 (1==map, 0 == leave in projective)
    return MP_OKAY on success
 */
-#ifdef FP_ECC
-static int normal_ecc_mulmod(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
-                             mp_int* modulus, WC_RNG* rng, int map, void* heap)
-#else
+
 int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
                      mp_int* modulus, int map, void* heap)
-#endif
-#if !defined(WOLFSSL_SP_MATH)
-{}
-#else
 {
    if (k == NULL || G == NULL || R == NULL || modulus == NULL) {
        return ECC_BAD_ARG_E;
@@ -475,7 +446,6 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
 #endif
    return ECC_BAD_ARG_E;
 }
-#endif
 #endif /* !WOLFSSL_SP_MATH || !FP_ECC */
 
 #ifndef FP_ECC
@@ -493,8 +463,6 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
 int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
                       mp_int* modulus, mp_int* order, WC_RNG* rng, int map,
                       void* heap)
-#if !defined(WOLFSSL_SP_MATH)
-#else
 {
    if (k == NULL || G == NULL || R == NULL || modulus == NULL) {
        return ECC_BAD_ARG_E;
@@ -504,11 +472,6 @@ int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
    (void)order;
    (void)rng;
 
-#ifndef WOLFSSL_SP_NO_256
-   if (mp_count_bits(modulus) == 256) {
-       return sp_ecc_mulmod_256(k, G, R, map, heap);
-   }
-#endif
 #ifdef WOLFSSL_SP_384
    if (mp_count_bits(modulus) == 384) {
        return sp_ecc_mulmod_384(k, G, R, map, heap);
@@ -516,7 +479,6 @@ int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
 #endif
    return ECC_BAD_ARG_E;
 }
-#endif /* !WOLFSSL_SP_MATH */
 #endif /* !FP_ECC */
 
 #endif /* !FREESCALE_LTC_ECC && !WOLFSSL_STM32_PKA */
@@ -555,23 +517,12 @@ ecc_point* wc_ecc_new_point_h(void* heap)
    }
    XMEMSET(p, 0, sizeof(ecc_point));
 
-#ifndef ALT_ECC_SIZE
    if (mp_init_multi(p->x, p->y, p->z, NULL, NULL, NULL) != MP_OKAY) {
       XFREE(p, heap, DYNAMIC_TYPE_ECC);
       return NULL;
    }
-#else
-   p->x = (mp_int*)&p->xyz[0];
-   p->y = (mp_int*)&p->xyz[1];
-   p->z = (mp_int*)&p->xyz[2];
-   alt_fp_init(p->x);
-   alt_fp_init(p->y);
-   alt_fp_init(p->z);
-#endif
-
    return p;
 }
-
 
 /**
    Allocate a new ECC point
@@ -1023,10 +974,8 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
     int err = MP_OKAY;
 
     mp_int* k = &private_key->k;
-#ifdef HAVE_ECC_CDH
-#else
+
     WOLFSSL_ENTER("wc_ecc_shared_secret_gen_sync");
-#endif
 
 #ifdef WOLFSSL_HAVE_SP_ECC
 #ifdef WOLFSSL_SP_384
@@ -1037,14 +986,9 @@ static int wc_ecc_shared_secret_gen_sync(ecc_key* private_key, ecc_point* point,
     else
 #endif
 #endif
-#if defined(WOLFSSL_SP_MATH)
-    {
-        err = WC_KEY_SIZE_E;
+    err = WC_KEY_SIZE_E;
 
-        (void)curve;
-    }
-#else
-#endif
+    (void)curve;
 
     WOLFSSL_LEAVE("wc_ecc_shared_secret_gen_sync", err);
 
@@ -1267,9 +1211,6 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
         return BAD_FUNC_ARG;
     }
 
-#if !defined(WOLFSSL_ATECC508A) && !defined(WOLFSSL_ATECC608A) \
-  && !defined(WOLFSSL_SILABS_SE_ACCEL)
-
     /* if ecc_point passed in then use it as output for public key point */
     if (pubOut != NULL) {
         pub = pubOut;
@@ -1300,16 +1241,7 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
     }
 
     if (err == MP_OKAY) {
-    #ifndef ALT_ECC_SIZE
-        err = mp_init_multi(pub->x, pub->y, pub->z, NULL, NULL, NULL);
-    #else
-        pub->x = (mp_int*)&pub->xyz[0];
-        pub->y = (mp_int*)&pub->xyz[1];
-        pub->z = (mp_int*)&pub->xyz[2];
-        alt_fp_init(pub->x);
-        alt_fp_init(pub->y);
-        alt_fp_init(pub->z);
-    #endif
+    	err = mp_init_multi(pub->x, pub->y, pub->z, NULL, NULL, NULL);
     }
 
     if (err != MP_OKAY) {
@@ -1323,10 +1255,7 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
     else
 #endif
 #endif
-#if defined(WOLFSSL_SP_MATH)
-        err = WC_KEY_SIZE_E;
-#else
-#endif
+    err = WC_KEY_SIZE_E;
 
     if (err != MP_OKAY) {
         /* clean up if failed */
@@ -1342,12 +1271,6 @@ static int ecc_make_pub_ex(ecc_key* key, ecc_curve_spec* curveIn,
         wc_ecc_curve_free(curve);
         FREE_CURVE_SPECS();
     }
-
-#else
-    (void)curveIn;
-    err = NOT_COMPILED_IN;
-#endif /* WOLFSSL_ATECC508A || WOLFSSL_SILABS_SE_ACCEL */
-
     /* change key state if public part is cached */
     if (key->type == ECC_PRIVATEKEY_ONLY && pubOut == NULL) {
         key->type = ECC_PRIVATEKEY;
@@ -1500,11 +1423,7 @@ int wc_ecc_init_ex(ecc_key* key, void* heap, int devId)
         return MEMORY_E;
     }
 
-#ifdef WOLFSSL_HEAP_TEST
-    key->heap = (void*)WOLFSSL_HEAP_TEST;
-#else
     key->heap = heap;
-#endif
 
     return ret;
 }
@@ -1882,9 +1801,6 @@ int wc_ecc_import_point_der_ex(byte* in, word32 inLen, const int curve_idx,
                                ecc_point* point, int shortKeySize)
 {
     int err = 0;
-#ifdef HAVE_COMP_KEY
-    int compressed = 0;
-#endif
     int keysize;
     byte pointType;
 
@@ -1902,16 +1818,7 @@ int wc_ecc_import_point_der_ex(byte* in, word32 inLen, const int curve_idx,
     }
 
     /* init point */
-#ifdef ALT_ECC_SIZE
-    point->x = (mp_int*)&point->xyz[0];
-    point->y = (mp_int*)&point->xyz[1];
-    point->z = (mp_int*)&point->xyz[2];
-    alt_fp_init(point->x);
-    alt_fp_init(point->y);
-    alt_fp_init(point->z);
-#else
     err = mp_init_multi(point->x, point->y, point->z, NULL, NULL, NULL);
-#endif
     if (err != MP_OKAY)
         return MEMORY_E;
 
@@ -1923,11 +1830,7 @@ int wc_ecc_import_point_der_ex(byte* in, word32 inLen, const int curve_idx,
     }
 
     if (pointType == ECC_POINT_COMP_EVEN || pointType == ECC_POINT_COMP_ODD) {
-#ifdef HAVE_COMP_KEY
-        compressed = 1;
-#else
         err = NOT_COMPILED_IN;
-#endif
     }
 
     /* adjust to skip first byte */
@@ -1965,150 +1868,6 @@ int wc_ecc_import_point_der(byte* in, word32 inLen, const int curve_idx,
 }
 #endif /* HAVE_ECC_KEY_IMPORT */
 
-#ifdef HAVE_ECC_KEY_EXPORT
-/* export point to der */
-
-int wc_ecc_export_point_der_ex(const int curve_idx, ecc_point* point, byte* out,
-                               word32* outLen, int compressed)
-{
-    if (compressed == 0)
-        return wc_ecc_export_point_der(curve_idx, point, out, outLen);
-
-    return -1;
-}
-
-int wc_ecc_export_point_der(const int curve_idx, ecc_point* point, byte* out,
-                            word32* outLen)
-{
-    int    ret = MP_OKAY;
-    word32 numlen;
-    byte   buf[ECC_BUFSIZE];
-
-    if ((curve_idx < 0) || (wc_ecc_is_valid_idx(curve_idx) == 0))
-        return ECC_BAD_ARG_E;
-
-    numlen = ecc_sets[curve_idx].size;
-
-    /* return length needed only */
-    if (point != NULL && out == NULL && outLen != NULL) {
-        *outLen = 1 + 2*numlen;
-        return LENGTH_ONLY_E;
-    }
-
-    if (point == NULL || out == NULL || outLen == NULL)
-        return ECC_BAD_ARG_E;
-
-    if (*outLen < (1 + 2*numlen)) {
-        *outLen = 1 + 2*numlen;
-        return BUFFER_E;
-    }
-
-    /* store byte point type */
-    out[0] = ECC_POINT_UNCOMP;
-
-    /* pad and store x */
-    XMEMSET(buf, 0, ECC_BUFSIZE);
-    ret = mp_to_unsigned_bin(point->x, buf +
-                                 (numlen - mp_unsigned_bin_size(point->x)));
-    if (ret != MP_OKAY)
-        goto done;
-    XMEMCPY(out+1, buf, numlen);
-
-    /* pad and store y */
-    XMEMSET(buf, 0, ECC_BUFSIZE);
-    ret = mp_to_unsigned_bin(point->y, buf +
-                                 (numlen - mp_unsigned_bin_size(point->y)));
-    if (ret != MP_OKAY)
-        goto done;
-    XMEMCPY(out+1+numlen, buf, numlen);
-
-    *outLen = 1 + 2*numlen;
-
-done:
-
-    return ret;
-}
-
-
-/* export public ECC key in ANSI X9.63 format */
-int wc_ecc_export_x963(ecc_key* key, byte* out, word32* outLen)
-{
-   int    ret = MP_OKAY;
-   word32 numlen;
-   byte   buf[ECC_BUFSIZE];
-   word32 pubxlen, pubylen;
-
-   /* return length needed only */
-   if (key != NULL && out == NULL && outLen != NULL) {
-      /* if key hasn't been setup assume max bytes for size estimation */
-      numlen = key->dp ? key->dp->size : MAX_ECC_BYTES;
-      *outLen = 1 + 2*numlen;
-      return LENGTH_ONLY_E;
-   }
-
-   if (key == NULL || out == NULL || outLen == NULL)
-      return ECC_BAD_ARG_E;
-
-   if (key->type == ECC_PRIVATEKEY_ONLY)
-       return ECC_PRIVATEONLY_E;
-
-   if (key->type == ECC_STATE_NONE ||
-       wc_ecc_is_valid_idx(key->idx) == 0 ||
-       key->dp == NULL) {
-       return ECC_BAD_ARG_E;
-   }
-
-   numlen = key->dp->size;
-
-    /* verify room in out buffer */
-   if (*outLen < (1 + 2*numlen)) {
-      *outLen = 1 + 2*numlen;
-      return BUFFER_E;
-   }
-
-   /* verify public key length is less than key size */
-   pubxlen = mp_unsigned_bin_size(key->pubkey.x);
-   pubylen = mp_unsigned_bin_size(key->pubkey.y);
-   if ((pubxlen > numlen) || (pubylen > numlen)) {
-      WOLFSSL_MSG("Public key x/y invalid!");
-      return BUFFER_E;
-   }
-
-   /* store byte point type */
-   out[0] = ECC_POINT_UNCOMP;
-
-   /* pad and store x */
-   XMEMSET(buf, 0, ECC_BUFSIZE);
-   ret = mp_to_unsigned_bin(key->pubkey.x, buf + (numlen - pubxlen));
-   if (ret != MP_OKAY)
-      goto done;
-   XMEMCPY(out+1, buf, numlen);
-
-   /* pad and store y */
-   XMEMSET(buf, 0, ECC_BUFSIZE);
-   ret = mp_to_unsigned_bin(key->pubkey.y, buf + (numlen - pubylen));
-   if (ret != MP_OKAY)
-      goto done;
-   XMEMCPY(out+1+numlen, buf, numlen);
-
-   *outLen = 1 + 2*numlen;
-
-done:
-   return ret;
-}
-
-
-/* export public ECC key in ANSI X9.63 format, extended with
- * compression option */
-int wc_ecc_export_x963_ex(ecc_key* key, byte* out, word32* outLen,
-                          int compressed)
-{
-    if (compressed == 0)
-        return wc_ecc_export_x963(key, out, outLen);
-
-    return -1;
-}
-#endif /* HAVE_ECC_KEY_EXPORT */
 
 /* is ecc point on curve described by dp ? */
 int wc_ecc_is_point(ecc_point* ecp, mp_int* a, mp_int* b, mp_int* prime)
@@ -2148,9 +1907,6 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
                           int curve_id)
 {
     int err = MP_OKAY;
-#ifdef HAVE_COMP_KEY
-    int compressed = 0;
-#endif
     int keysize = 0;
     byte pointType;
 
@@ -2166,18 +1922,8 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
     wc_ecc_reset(key);
 
     /* init key */
-    #ifdef ALT_ECC_SIZE
-        key->pubkey.x = (mp_int*)&key->pubkey.xyz[0];
-        key->pubkey.y = (mp_int*)&key->pubkey.xyz[1];
-        key->pubkey.z = (mp_int*)&key->pubkey.xyz[2];
-        alt_fp_init(key->pubkey.x);
-        alt_fp_init(key->pubkey.y);
-        alt_fp_init(key->pubkey.z);
-        err = mp_init(&key->k);
-    #else
-        err = mp_init_multi(&key->k,
+    err = mp_init_multi(&key->k,
                     key->pubkey.x, key->pubkey.y, key->pubkey.z, NULL, NULL);
-    #endif
     if (err != MP_OKAY)
         return MEMORY_E;
 
@@ -2189,11 +1935,7 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
     }
 
     if (pointType == ECC_POINT_COMP_EVEN || pointType == ECC_POINT_COMP_ODD) {
-    #ifdef HAVE_COMP_KEY
-        compressed = 1;
-    #else
         err = NOT_COMPILED_IN;
-    #endif
     }
 
     /* adjust to skip first byte */
@@ -2201,12 +1943,6 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
     in += 1;
 
     if (err == MP_OKAY) {
-    #ifdef HAVE_COMP_KEY
-        /* adjust inLen if compressed */
-        if (compressed)
-            inLen = inLen*2 + 1;  /* used uncompressed len */
-    #endif
-
         /* determine key size */
         keysize = (inLen>>1);
         err = wc_ecc_set_curve(key, keysize, curve_id);
@@ -2242,98 +1978,6 @@ int wc_ecc_import_x963(const byte* in, word32 inLen, ecc_key* key)
 }
 #endif /* HAVE_ECC_KEY_IMPORT */
 
-#ifdef HAVE_ECC_KEY_EXPORT
-
-/* export ecc key to component form, d is optional if only exporting public
- * encType is WC_TYPE_UNSIGNED_BIN or WC_TYPE_HEX_STR
- * return MP_OKAY on success */
-int wc_ecc_export_ex(ecc_key* key, byte* qx, word32* qxLen,
-                 byte* qy, word32* qyLen, byte* d, word32* dLen, int encType)
-{
-    int err = 0;
-    word32 keySz;
-
-    if (key == NULL) {
-        return BAD_FUNC_ARG;
-    }
-
-    if (wc_ecc_is_valid_idx(key->idx) == 0) {
-        return ECC_BAD_ARG_E;
-    }
-    keySz = key->dp->size;
-
-    /* private key, d */
-    if (d != NULL) {
-        if (dLen == NULL ||
-            (key->type != ECC_PRIVATEKEY && key->type != ECC_PRIVATEKEY_ONLY))
-            return BAD_FUNC_ARG;
-
-        err = wc_export_int(&key->k, d, dLen, keySz, encType);
-        if (err != MP_OKAY)
-            return err;
-    }
-
-    /* public x component */
-    if (qx != NULL) {
-        if (qxLen == NULL || key->type == ECC_PRIVATEKEY_ONLY)
-            return BAD_FUNC_ARG;
-
-        err = wc_export_int(key->pubkey.x, qx, qxLen, keySz, encType);
-        if (err != MP_OKAY)
-            return err;
-    }
-
-    /* public y component */
-    if (qy != NULL) {
-        if (qyLen == NULL || key->type == ECC_PRIVATEKEY_ONLY)
-            return BAD_FUNC_ARG;
-
-        err = wc_export_int(key->pubkey.y, qy, qyLen, keySz, encType);
-        if (err != MP_OKAY)
-            return err;
-    }
-
-    return err;
-}
-
-
-/* export ecc private key only raw, outLen is in/out size as unsigned bin
-   return MP_OKAY on success */
-int wc_ecc_export_private_only(ecc_key* key, byte* out, word32* outLen)
-{
-    if (out == NULL || outLen == NULL) {
-        return BAD_FUNC_ARG;
-    }
-
-    return wc_ecc_export_ex(key, NULL, NULL, NULL, NULL, out, outLen,
-        WC_TYPE_UNSIGNED_BIN);
-}
-
-/* export public key to raw elements including public (Qx,Qy) as unsigned bin
- * return MP_OKAY on success, negative on error */
-int wc_ecc_export_public_raw(ecc_key* key, byte* qx, word32* qxLen,
-                             byte* qy, word32* qyLen)
-{
-    if (qx == NULL || qxLen == NULL || qy == NULL || qyLen == NULL) {
-        return BAD_FUNC_ARG;
-    }
-
-    return wc_ecc_export_ex(key, qx, qxLen, qy, qyLen, NULL, NULL,
-        WC_TYPE_UNSIGNED_BIN);
-}
-
-/* export ecc key to raw elements including public (Qx,Qy) and
- *   private (d) as unsigned bin
- * return MP_OKAY on success, negative on error */
-int wc_ecc_export_private_raw(ecc_key* key, byte* qx, word32* qxLen,
-                              byte* qy, word32* qyLen, byte* d, word32* dLen)
-{
-    return wc_ecc_export_ex(key, qx, qxLen, qy, qyLen, d, dLen,
-        WC_TYPE_UNSIGNED_BIN);
-}
-
-#endif /* HAVE_ECC_KEY_EXPORT */
-
 #ifdef HAVE_ECC_KEY_IMPORT
 /* import private key, public part optional if (pub) passed as NULL */
 int wc_ecc_import_private_key_ex(const byte* priv, word32 privSz,
@@ -2346,16 +1990,11 @@ int wc_ecc_import_private_key_ex(const byte* priv, word32 privSz,
 
     /* public optional, NULL if only importing private */
     if (pub != NULL) {
-    #ifndef NO_ASN
         word32 idx = 0;
         ret = wc_ecc_import_x963_ex(pub, pubSz, key, curve_id);
         if (ret < 0)
             ret = wc_EccPublicKeyDecode(pub, &idx, key, pubSz);
         key->type = ECC_PRIVATEKEY;
-    #else
-        (void)pubSz;
-        ret = NOT_COMPILED_IN;
-    #endif
     }
     else {
         /* make sure required variables are reset */
@@ -2484,18 +2123,8 @@ static int wc_ecc_import_raw_private(ecc_key* key, const char* qx,
     }
 
     /* init key */
-#ifdef ALT_ECC_SIZE
-    key->pubkey.x = (mp_int*)&key->pubkey.xyz[0];
-    key->pubkey.y = (mp_int*)&key->pubkey.xyz[1];
-    key->pubkey.z = (mp_int*)&key->pubkey.xyz[2];
-    alt_fp_init(key->pubkey.x);
-    alt_fp_init(key->pubkey.y);
-    alt_fp_init(key->pubkey.z);
-    err = mp_init(&key->k);
-#else
     err = mp_init_multi(&key->k, key->pubkey.x, key->pubkey.y, key->pubkey.z,
                                                                   NULL, NULL);
-#endif
     if (err != MP_OKAY)
         return MEMORY_E;
 

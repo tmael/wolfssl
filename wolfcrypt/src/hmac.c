@@ -1,6 +1,6 @@
 /* hmac.c
  *
- * Copyright (C) 2006-2020 wolfSSL Inc.
+ * Copyright (C) 2006-2021 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -30,10 +30,6 @@
 #ifndef NO_HMAC
 
 #include <wolfssl/wolfcrypt/hmac.h>
-
-#ifdef WOLF_CRYPTO_CB
-    #include <wolfssl/wolfcrypt/cryptocb.h>
-#endif
 
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -92,13 +88,7 @@ int _InitHmac(Hmac* hmac, int type, void* heap)
             ret = BAD_FUNC_ARG;
             break;
     }
-
-    /* default to NULL heap hint or test value */
-#ifdef WOLFSSL_HEAP_TEST
-    hmac->heap = (void)WOLFSSL_HEAP_TEST;
-#else
     hmac->heap = heap;
-#endif /* WOLFSSL_HEAP_TEST */
 
     return ret;
 }
