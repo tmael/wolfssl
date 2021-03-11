@@ -20682,8 +20682,8 @@ static int ecc_test_make_pub(WC_RNG* rng)
     byte tmp[ECC_BUFSIZE];
 #endif
     const byte* msg = (const byte*)"test wolfSSL ECC public gen";
-#if defined(HAVE_ECC_KEY_EXPORT)
-    word32 x;
+#if !defined(NO_ECC256) || defined(HAVE_ECC_KEY_EXPORT)
+    word32 x = 0;
 #endif
     word32 tmpSz;
     int ret = 0;

@@ -57,31 +57,6 @@ masking and clearing memory logic.
 
 #else
 
-
-#if defined(__ICCARM__)
-    #include <intrinsics.h>
-#endif
-
-
-#ifdef INTEL_INTRINSICS
-
-    #include <stdlib.h>      /* get intrinsic definitions */
-
-    /* for non visual studio probably need no long version, 32 bit only
-     * i.e., _rotl and _rotr */
-    #pragma intrinsic(_lrotl, _lrotr)
-
-    WC_STATIC WC_INLINE word32 rotlFixed(word32 x, word32 y)
-    {
-        return y ? _lrotl(x, y) : x;
-    }
-
-    WC_STATIC WC_INLINE word32 rotrFixed(word32 x, word32 y)
-    {
-        return y ? _lrotr(x, y) : x;
-    }
-
-#else /* generic */
 /* This routine performs a left circular arithmetic shift of <x> by <y> value. */
 
     WC_STATIC WC_INLINE word32 rotlFixed(word32 x, word32 y)
@@ -94,25 +69,6 @@ masking and clearing memory logic.
     {
         return (x >> y) | (x << (sizeof(y) * 8 - y));
     }
-
-#endif
-
-#ifdef WC_RC2
-
-/* This routine performs a left circular arithmetic shift of <x> by <y> value */
-WC_STATIC WC_INLINE word16 rotlFixed16(word16 x, word16 y)
-{
-    return (x << y) | (x >> (sizeof(y) * 8 - y));
-}
-
-
-/* This routine performs a right circular arithmetic shift of <x> by <y> value */
-WC_STATIC WC_INLINE word16 rotrFixed16(word16 x, word16 y)
-{
-    return (x >> y) | (x << (sizeof(y) * 8 - y));
-}
-
-#endif /* WC_RC2 */
 
 /* This routine performs a byte swap of 32-bit word value. */
 WC_STATIC WC_INLINE word32 ByteReverseWord32(word32 value)
@@ -312,9 +268,6 @@ WC_STATIC WC_INLINE int ConstantCompare(const byte* a, const byte* b, int length
 
 #ifndef WOLFSSL_HAVE_MIN
     #define WOLFSSL_HAVE_MIN
-    #if defined(HAVE_FIPS) && !defined(min) /* so ifdef check passes */
-        #define min min
-    #endif
     /* returns the smaller of a and b */
     WC_STATIC WC_INLINE word32 min(word32 a, word32 b)
     {
@@ -324,9 +277,6 @@ WC_STATIC WC_INLINE int ConstantCompare(const byte* a, const byte* b, int length
 
 #ifndef WOLFSSL_HAVE_MAX
     #define WOLFSSL_HAVE_MAX
-    #if defined(HAVE_FIPS) && !defined(max) /* so ifdef check passes */
-        #define max max
-    #endif
     WC_STATIC WC_INLINE word32 max(word32 a, word32 b)
     {
         return a > b ? a : b;
