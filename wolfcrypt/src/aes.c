@@ -335,7 +335,7 @@ static const word32 Te[4][256] = {
 };
 
 #ifdef HAVE_AES_DECRYPT
-static const FLASH_QUALIFIER word32 Td[4][256] = {
+static const word32 Td[4][256] = {
 {
     0x51f4a750U, 0x7e416553U, 0x1a17a4c3U, 0x3a275e96U,
     0x3bab6bcbU, 0x1f9d45f1U, 0xacfa58abU, 0x4be30393U,
@@ -603,9 +603,9 @@ static const FLASH_QUALIFIER word32 Td[4][256] = {
 }
 };
 
-#ifdef HAVE_AES_DECRYPT
+
 #if defined(HAVE_AES_CBC) || defined(WOLFSSL_AES_DIRECT)
-static const FLASH_QUALIFIER byte Td4[256] =
+static const byte Td4[256] =
 {
     0x52U, 0x09U, 0x6aU, 0xd5U, 0x30U, 0x36U, 0xa5U, 0x38U,
     0xbfU, 0x40U, 0xa3U, 0x9eU, 0x81U, 0xf3U, 0xd7U, 0xfbU,
@@ -692,7 +692,7 @@ static void wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
      * and add initial round key:
      */
     XMEMCPY(&s0, inBlock,                  sizeof(s0));
-    XMEMCPY(&s1, inBlock +     sizeof(s0), sizeof(s1));
+    XMEMCPY(&s1, inBlock + sizeof(s0),     sizeof(s1));
     XMEMCPY(&s2, inBlock + 2 * sizeof(s0), sizeof(s2));
     XMEMCPY(&s3, inBlock + 3 * sizeof(s0), sizeof(s3));
 
@@ -703,7 +703,6 @@ static void wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
     s3 = ByteReverseWord32(s3);
 #endif
 
-    /* AddRoundKey */
     s0 ^= rk[0];
     s1 ^= rk[1];
     s2 ^= rk[2];
@@ -811,7 +810,7 @@ static void wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
 #endif
 
     XMEMCPY(outBlock,                  &s0, sizeof(s0));
-    XMEMCPY(outBlock +     sizeof(s0), &s1, sizeof(s1));
+    XMEMCPY(outBlock + sizeof(s0),     &s1, sizeof(s1));
     XMEMCPY(outBlock + 2 * sizeof(s0), &s2, sizeof(s2));
     XMEMCPY(outBlock + 3 * sizeof(s0), &s3, sizeof(s3));
 
@@ -819,7 +818,8 @@ static void wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
 #endif /* HAVE_AES_CBC || WOLFSSL_AES_DIRECT || HAVE_AESGCM */
 
 #if defined(HAVE_AES_DECRYPT)
-#if defined(HAVE_AES_CBC) || defined(WOLFSSL_AES_DIRECT)
+#if (defined(HAVE_AES_CBC) || defined(WOLFSSL_AES_DIRECT)) && \
+    !defined(WOLFSSL_DEVCRYPTO_CBC)
 
 /* load 4 Td Tables into cache by cache line stride */
 static WC_INLINE word32 PreFetchTd(void)
@@ -854,6 +854,7 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
     word32 s0, s1, s2, s3;
     word32 t0, t1, t2, t3;
     word32 r = aes->rounds >> 1;
+
     const word32* rk = aes->key;
     if (r > 7 || r == 0) {
         WOLFSSL_MSG("AesDecrypt encountered improper key, set it up");
@@ -1010,9 +1011,6 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
         aes->rounds = (keylen/4) + 6;
 
         XMEMCPY(rk, userKey, keylen);
-    #if defined(LITTLE_ENDIAN_ORDER)
-        ByteReverseWords(rk, rk, keylen);
-    #endif
     #if defined(LITTLE_ENDIAN_ORDER) && !defined(WOLFSSL_PIC32MZ_CRYPT) && \
         (!defined(WOLFSSL_ESP32WROOM32_CRYPT) || \
           defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_AES))
@@ -1104,9 +1102,8 @@ static void wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
         default:
             return BAD_FUNC_ARG;
         } /* switch */
-        ForceZero(&temp, sizeof(temp));
 
-    #if defined(HAVE_AES_DECRYPT)
+    #ifdef HAVE_AES_DECRYPT
         if (dir == AES_DECRYPTION) {
             unsigned int j;
             rk = aes->key;
@@ -1590,17 +1587,18 @@ int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
     word32 partial = sz % AES_BLOCK_SIZE;
     const byte* c = in;
     byte* p = out;
-    ALIGN32 byte counter[AES_BLOCK_SIZE];
-    ALIGN32 byte scratch[AES_BLOCK_SIZE];
-    ALIGN32 byte Tprime[AES_BLOCK_SIZE];
-    ALIGN32 byte EKY0[AES_BLOCK_SIZE];
+    byte counter[AES_BLOCK_SIZE];
+    byte initialCounter[AES_BLOCK_SIZE];
+    byte *ctr;
+    byte scratch[AES_BLOCK_SIZE];
+    byte Tprime[AES_BLOCK_SIZE];
+    byte EKY0[AES_BLOCK_SIZE];
 
+    ctr = counter;
+    XMEMSET(initialCounter, 0, AES_BLOCK_SIZE);
     if (ivSz == GCM_NONCE_MID_SZ) {
-        /* Counter is IV with bottom 4 bytes set to: 0x00,0x00,0x00,0x01. */
-        XMEMCPY(counter, iv, ivSz);
-        XMEMSET(counter + GCM_NONCE_MID_SZ, 0,
-                                         AES_BLOCK_SIZE - GCM_NONCE_MID_SZ - 1);
-        counter[AES_BLOCK_SIZE - 1] = 1;
+        XMEMCPY(initialCounter, iv, ivSz);
+        initialCounter[AES_BLOCK_SIZE - 1] = 1;
     }
     else {
         GHASH(aes, NULL, 0, iv, ivSz, initialCounter, AES_BLOCK_SIZE);
