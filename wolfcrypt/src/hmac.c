@@ -93,7 +93,40 @@ int _InitHmac(Hmac* hmac, int type, void* heap)
     return ret;
 }
 
+/*!
+    \ingroup HMAC
 
+    \brief This function initializes an Hmac object, setting its
+    encryption type, key and HMAC length.
+
+    \return 0 Returned on successfully initializing the Hmac object
+    \return BAD_FUNC_ARG Returned if the input type is invalid. Valid options
+    are: SHA256, SHA384, SHA512
+    \return MEMORY_E Returned if there is an error allocating memory for the
+    structure to use for hashing
+    \return HMAC_MIN_KEYLEN_E May be returned when using a FIPS implementation
+    and the key length specified is shorter than the minimum acceptable
+    FIPS standard
+
+    \param hmac pointer to the Hmac object to initialize
+    \param type type specifying which encryption method the Hmac object
+    should use. Valid options are: SHA256, SHA384, SHA512
+    \param key pointer to a buffer containing the key with which to
+    initialize the Hmac object
+    \param length length of the key
+
+    _Example_
+    \code
+    Hmac hmac;
+    byte key[] = { // initialize with key to use for encryption };
+    if (wc_HmacSetKey(&hmac, SHA256, key, sizeof(key)) != 0) {
+        // error initializing Hmac object
+    }
+    \endcode
+
+    \sa wc_HmacUpdate
+    \sa wc_HmacFinal
+*/
 int wc_HmacSetKey(Hmac* hmac, int type, const byte* key, word32 length)
 {
     byte*  ip;
@@ -108,10 +141,6 @@ int wc_HmacSetKey(Hmac* hmac, int type, const byte* key, word32 length)
     }
 
     /* if set key has already been run then make sure and free existing */
-    /* This is for async and PIC32MZ situations, and just normally OK,
-       provided the user calls wc_HmacInit() first. That function is not
-       available in FIPS builds. In current FIPS builds, the hashes are
-       not allocating resources. */
     if (hmac->macType != WC_HASH_TYPE_NONE) {
         wc_HmacFree(hmac);
     }
@@ -213,7 +242,40 @@ static int HmacKeyInnerHash(Hmac* hmac)
 
     return ret;
 }
+/*!
+    \ingroup HMAC
 
+    \brief This function updates the message to authenticate using HMAC.
+    It should be called after the Hmac object has been initialized with
+    wc_HmacSetKey. This function may be called multiple times to update
+    the message to hash. After calling wc_HmacUpdate as desired, one should
+    call wc_HmacFinal to obtain the final authenticated message tag.
+
+    \return 0 Returned on successfully updating the message to authenticate
+    \return MEMORY_E Returned if there is an error allocating memory for
+    use with a hashing algorithm
+
+    \param hmac pointer to the Hmac object for which to update the message
+    \param msg pointer to the buffer containing the message to append
+    \param length length of the message to append
+
+    _Example_
+    \code
+    Hmac hmac;
+    byte msg[] = { // initialize with message to authenticate };
+    byte msg2[] = { // initialize with second half of message };
+    // initialize hmac
+    if( wc_HmacUpdate(&hmac, msg, sizeof(msg)) != 0) {
+        // error updating message
+    }
+    if( wc_HmacUpdate(&hmac, msg2, sizeof(msg)) != 0) {
+        // error updating with second message
+    }
+    \endcode
+
+    \sa wc_HmacSetKey
+    \sa wc_HmacFinal
+*/
 
 int wc_HmacUpdate(Hmac* hmac, const byte* msg, word32 length)
 {
@@ -249,7 +311,35 @@ int wc_HmacUpdate(Hmac* hmac, const byte* msg, word32 length)
     return ret;
 }
 
+/*!
+    \ingroup HMAC
 
+    \brief This function computes the final hash of an Hmac object's message.
+
+    \return 0 Returned on successfully computing the final hash
+    \return MEMORY_E Returned if there is an error allocating memory for
+    use with a hashing algorithm
+
+    \param hmac pointer to the Hmac object for which to calculate the
+    final hash
+    \param hash pointer to the buffer in which to store the final hash.
+    Should have room available as required by the hashing algorithm chosen
+
+    _Example_
+    \code
+    Hmac hmac;
+    byte hash[MD5_DIGEST_SIZE];
+    // initialize hmac with SHA256 as type
+    // wc_HmacUpdate() with messages
+
+    if (wc_HmacFinal(&hmac, hash) != 0) {
+        // error computing hash
+    }
+    \endcode
+
+    \sa wc_HmacSetKey
+    \sa wc_HmacUpdate
+*/
 int wc_HmacFinal(Hmac* hmac, byte* hash)
 {
     int ret;
@@ -310,8 +400,17 @@ int wc_HmacFinal(Hmac* hmac, byte* hash)
     return ret;
 }
 
+/*!
+    \ingroup HMAC
 
-/* Initialize Hmac for use with async device */
+    \brief This function initializes HMAC.
+
+    \return 0 Returned upon successfully initializing
+    \return BAD_FUNC_ARG error returned if sha256 is null
+
+    \param hmac pointer to the HMAC structure to use for hash calculation
+*/
+
 int wc_HmacInit(Hmac* hmac, void* heap, int devId)
 {
     int ret = 0;
@@ -327,8 +426,17 @@ int wc_HmacInit(Hmac* hmac, void* heap, int devId)
 
     return ret;
 }
+/*!
+    \ingroup HMAC
 
-/* Free Hmac from use with async device */
+    \brief This function doesn't do anything but it's supplied for compatibility
+
+    \return none No returns.
+
+    \param hmac pointer to the HMAC structure to be freed.
+
+*/
+
 void wc_HmacFree(Hmac* hmac)
 {
     if (hmac == NULL)
@@ -352,7 +460,24 @@ void wc_HmacFree(Hmac* hmac)
     }
 
 }
+/*!
+    \ingroup HMAC
 
+    \brief This function returns the largest HMAC digest size available
+    based on the configured cipher suites.
+
+    \return Success Returns the largest HMAC digest size available based
+    on the configured cipher suites
+
+    \param none No parameters.
+
+    _Example_
+    \code
+    int maxDigestSz = wolfSSL_GetHmacMaxSize();
+    \endcode
+
+    \sa none
+*/
 int wolfSSL_GetHmacMaxSize(void)
 {
     return WC_MAX_DIGEST_SIZE;

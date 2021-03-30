@@ -59,6 +59,20 @@ static void ShiftAndXorRb(byte* out, byte* in)
     }
 }
 
+/*!
+    \ingroup CMAC
+
+    \brief This function initializes CMAC.
+
+    \return 0 Returned upon successfully initializing
+    \return BAD_FUNC_ARG error returned if cmac or key is null or
+                         key size is 0 or type is not set
+
+    \param cmac pointer to the CMAC structure to use for hash calculation
+    \param key 16, 24, or 32 byte secret key for authentication
+    \param keySz length of the key
+    \param type of CMAC method
+*/
 
 int wc_InitCmac(Cmac* cmac, const byte* key, word32 keySz,
                 int type, void* unused)
@@ -84,6 +98,22 @@ int wc_InitCmac(Cmac* cmac, const byte* key, word32 keySz,
     return ret;
 }
 
+/*!
+    \ingroup CMAC
+
+    \brief This function updates the message to authenticate using CMAC.
+    It should be called after the Cmac object has been initialized with
+    wc_InitCmac. You may call this function multiple times to update
+    the message to hash. After calling wc_CmacUpdate as desired, you must
+    call wc_CmacFinal to obtain the final authenticated message tag.
+
+    \return 0 Returned on successfully updating the message to authenticate
+    \return BAD_FUNC_ARG error if cmac or in is null
+
+    \param cmac pointer to the Cmac object for which to update the message
+    \param in pointer to the buffer containing the message to append
+    \param inSz length of the message to append
+*/
 
 int wc_CmacUpdate(Cmac* cmac, const byte* in, word32 inSz)
 {
@@ -112,6 +142,21 @@ int wc_CmacUpdate(Cmac* cmac, const byte* in, word32 inSz)
     return 0;
 }
 
+/*!
+    \ingroup CMAC
+
+    \brief This function computes the final hash of an Cmac object's message.
+
+    \return 0 Returned on successfully computing the final hash
+    \return BAD_FUNC_ARG error returned if cmac or out or outSz is null
+    \return BUFFER_E error if outSz is outside the min and max tag window
+
+    \param cmac pointer to the Hmac object for which to calculate the
+    final hash
+    \param hash pointer to the buffer in which to store the final hash
+    Should have room available as required by the hashing algorithm chosen
+    \param outSz pointer length of the tag
+*/
 
 int wc_CmacFinal(Cmac* cmac, byte* out, word32* outSz)
 {
@@ -148,26 +193,31 @@ int wc_CmacFinal(Cmac* cmac, byte* out, word32* outSz)
     return 0;
 }
 
+/*!
+    \ingroup CMAC
+
+    \brief This function computes the final hash of an Cmac object's message.
+
+    \return 0 Returned on successfully computing the final hash
+    \return BAD_FUNC_ARG error returned if cmac or out or key is null
+
+    \param out hash pointer to the buffer in which to store the final hash
+    \param outSz pointer length of the tag
+    \param in pointer to the buffer containing the message to append
+    \param inSz length of the message to append
+    \param key 16, 24, or 32 byte secret key for authentication
+    \param keySz length of the key
+*/
 
 int wc_AesCmacGenerate(byte* out, word32* outSz,
                        const byte* in, word32 inSz,
                        const byte* key, word32 keySz)
 {
-#ifdef WOLFSSL_SMALL_STACK
-    Cmac *cmac;
-#else
     Cmac cmac[1];
-#endif
     int ret;
 
     if (out == NULL || (in == NULL && inSz > 0) || key == NULL || keySz == 0)
         return BAD_FUNC_ARG;
-
-#ifdef WOLFSSL_SMALL_STACK
-    if ((cmac = (Cmac *)XMALLOC(sizeof *cmac, NULL,
-                                DYNAMIC_TYPE_CMAC)) == NULL)
-        return MEMORY_E;
-#endif
 
     ret = wc_InitCmac(cmac, key, keySz, WC_CMAC_AES, NULL);
     if (ret != 0)
@@ -183,14 +233,25 @@ int wc_AesCmacGenerate(byte* out, word32* outSz,
 
   out:
 
-#ifdef WOLFSSL_SMALL_STACK
-    if (cmac)
-        XFREE(cmac, NULL, DYNAMIC_TYPE_CMAC);
-#endif
-
     return ret;
 }
 
+/*!
+    \ingroup CMAC
+
+    \brief This function verifies the final tag of a Cmac object's message
+
+    \return 0 Returned on successfully computing the final hash
+    \return BAD_FUNC_ARG error returned if cmac or out or key is null
+
+    \param check pointer to the buffer containing a tag to be verified
+    \param checkSz length of the tag
+    \param in pointer to the buffer containing the message to process
+    \param inSz length of the message to process
+    \param key 16, 24, or 32 byte secret key for authentication
+    \param keySz length of the key
+
+*/
 
 int wc_AesCmacVerify(const byte* check, word32 checkSz,
                      const byte* in, word32 inSz,

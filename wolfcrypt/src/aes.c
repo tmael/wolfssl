@@ -1352,7 +1352,33 @@ static WC_INLINE void IncrementGcmCounter(byte* inOutCtr)
     }
 }
 
-/* Software AES - GCM SetKey */
+/*!
+    \ingroup AES
+    \brief This function is used to set the key for AES GCM
+    (Galois/Counter Mode). It initializes an AES object with the
+    given key. It is only enabled if the configure option
+    HAVE_AESGCM is enabled at compile time.
+
+    \return 0 On successfully setting the key.
+    \return BAD_FUNC_ARG Returned if the given key is an invalid length.
+
+    \param aes pointer to the AES object used to encrypt data
+    \param key 16, 24, or 32 byte secret key for encryption and decryption
+    \param len length of the key passed in
+
+    _Example_
+    \code
+    Aes enc;
+    int ret = 0;
+    byte key[] = { some 16, 24,32 byte key };
+    if (ret = wc_AesGcmSetKey(&enc, key, sizeof(key)) != 0) {
+    // failed to set aes key
+    }
+    \endcode
+
+    \sa wc_AesGcmEncrypt
+    \sa wc_AesGcmDecrypt
+*/
 int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
 {
     int  ret;
@@ -1496,13 +1522,10 @@ void GHASH(Aes* aes, const byte* a, word32 aSz, const byte* c,
 
 #endif /* WORD64_AVAILABLE && !GCM_WORD32 */
 
-#if !defined(WOLFSSL_XILINX_CRYPT) && !defined(WOLFSSL_AFALG_XILINX_AES)
-
-static
-int AES_GCM_encrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
-                      const byte* iv, word32 ivSz,
-                      byte* authTag, word32 authTagSz,
-                      const byte* authIn, word32 authInSz)
+static int AES_GCM_encrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
+                            const byte* iv, word32 ivSz,
+                            byte* authTag, word32 authTagSz,
+                            const byte* authIn, word32 authInSz)
 {
     int ret = 0;
     word32 blocks = sz / AES_BLOCK_SIZE;
@@ -1551,7 +1574,49 @@ int AES_GCM_encrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
     return ret;
 }
 
-/* Software AES - GCM Encrypt */
+/*!
+    \ingroup AES
+    \brief This function encrypts the input message, held in the buffer in,
+    and stores the resulting cipher text in the output buffer out. It
+    requires a new iv (initialization vector) for each call to encrypt.
+    It also encodes the input authentication vector, authIn, into the
+    authentication tag, authTag.
+
+    \return 0 On successfully encrypting the input message
+
+    \param aes - pointer to the AES object used to encrypt data
+    \param out pointer to the output buffer in which to store the cipher text
+    \param in pointer to the input buffer holding the message to encrypt
+    \param sz length of the input message to encrypt
+    \param iv pointer to the buffer containing the initialization vector
+    \param ivSz length of the initialization vector
+    \param authTag pointer to the buffer in which to store the
+    authentication tag
+    \param authTagSz length of the desired authentication tag
+    \param authIn pointer to the buffer containing the input
+    authentication vector
+    \param authInSz length of the input authentication vector
+
+    _Example_
+    \code
+    Aes enc;
+    // initialize aes structure by calling wc_AesGcmSetKey
+
+    byte plain[AES_BLOCK_LENGTH * n]; //n being a positive integer
+    making plain some multiple of 16 bytes
+    // initialize plain with msg to encrypt
+    byte cipher[sizeof(plain)];
+    byte iv[] = // some 16 byte iv
+    byte authTag[AUTH_TAG_LENGTH];
+    byte authIn[] = // Authentication Vector
+
+    wc_AesGcmEncrypt(&enc, cipher, plain, sizeof(cipher), iv, sizeof(iv),
+            authTag, sizeof(authTag), authIn, sizeof(authIn));
+    \endcode
+
+    \sa wc_AesGcmSetKey
+    \sa wc_AesGcmDecrypt
+*/
 int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
                    const byte* iv, word32 ivSz,
                    byte* authTag, word32 authTagSz,
@@ -1576,11 +1641,10 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
 /* AES GCM Decrypt */
 #if defined(HAVE_AES_DECRYPT) || defined(HAVE_AESGCM_DECRYPT)
-static
-int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
-                      const byte* iv, word32 ivSz,
-                      const byte* authTag, word32 authTagSz,
-                      const byte* authIn, word32 authInSz)
+static int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
+                             const byte* iv, word32 ivSz,
+                             const byte* authTag, word32 authTagSz,
+                             const byte* authIn, word32 authInSz)
 {
     int ret = 0;
     word32 blocks = sz / AES_BLOCK_SIZE;
@@ -1634,7 +1698,49 @@ int AES_GCM_decrypt_C(Aes* aes, byte* out, const byte* in, word32 sz,
     return ret;
 }
 
-/* Software AES - GCM Decrypt */
+/*!
+    \ingroup AES
+    \brief This function decrypts the input cipher text, held in the buffer
+    in, and stores the resulting message text in the output buffer out.
+    It also checks the input authentication vector, authIn, against the
+    supplied authentication tag, authTag.
+
+    \return 0 On successfully decrypting the input message
+    \return AES_GCM_AUTH_E If the authentication tag does not match the
+    supplied authentication code vector, authTag.
+
+    \param aes pointer to the AES object used to encrypt data
+    \param out pointer to the output buffer in which to store the message text
+    \param in pointer to the input buffer holding the cipher text to decrypt
+    \param sz length of the cipher text to decrypt
+    \param iv pointer to the buffer containing the initialization vector
+    \param ivSz length of the initialization vector
+    \param authTag pointer to the buffer containing the authentication tag
+    \param authTagSz length of the desired authentication tag
+    \param authIn pointer to the buffer containing the input
+    authentication vector
+    \param authInSz length of the input authentication vector
+
+    _Example_
+    \code
+    Aes enc; //can use the same struct as was passed to wc_AesGcmEncrypt
+    // initialize aes structure by calling wc_AesGcmSetKey if not already done
+
+    byte cipher[AES_BLOCK_LENGTH * n]; //n being a positive integer
+    making cipher some multiple of 16 bytes
+    // initialize cipher with cipher text to decrypt
+    byte output[sizeof(cipher)];
+    byte iv[] = // some 16 byte iv
+    byte authTag[AUTH_TAG_LENGTH];
+    byte authIn[] = // Authentication Vector
+
+    wc_AesGcmDecrypt(&enc, output, cipher, sizeof(cipher), iv, sizeof(iv),
+            authTag, sizeof(authTag), authIn, sizeof(authIn));
+    \endcode
+
+    \sa wc_AesGcmSetKey
+    \sa wc_AesGcmEncrypt
+*/
 int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
                      const byte* iv, word32 ivSz,
                      const byte* authTag, word32 authTagSz,
@@ -1655,7 +1761,6 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     }
 }
 #endif /* HAVE_AES_DECRYPT || HAVE_AESGCM_DECRYPT */
-#endif /* WOLFSSL_XILINX_CRYPT */
 #endif /* end of block for AESGCM implementation selection */
 
 
@@ -1839,7 +1944,40 @@ WOLFSSL_API int wc_GmacSetKey(Gmac* gmac, const byte* key, word32 len)
     return wc_AesGcmSetKey(&gmac->aes, key, len);
 }
 
+/*!
+    \ingroup AES
+    \brief This function generates the Gmac hash of the authIn input and
+    stores the result in the authTag buffer. After running wc_GmacUpdate,
+    one should compare the generated authTag to a known authentication tag
+    to verify the authenticity of a message.
 
+    \return 0 On successfully computing the Gmac hash.
+
+    \param gmac pointer to the gmac object used for authentication
+    \param iv initialization vector used for the hash
+    \param ivSz size of the initialization vector used
+    \param authIn pointer to the buffer containing the authentication
+    vector to verify
+    \param authInSz size of the authentication vector
+    \param authTag pointer to the output buffer in which to store the Gmac hash
+    \param authTagSz the size of the output buffer used to store the Gmac hash
+
+    _Example_
+    \code
+    Gmac gmac;
+    key[] = { some 16, 24, or 32 byte length key };
+    iv[] = { some 16 byte length iv };
+
+    wc_GmacSetKey(&gmac, key, sizeof(key));
+    authIn[] = { some 16 byte authentication input };
+    tag[AES_BLOCK_SIZE]; // will store authentication code
+
+    wc_GmacUpdate(&gmac, iv, sizeof(iv), authIn, sizeof(authIn), tag,
+    sizeof(tag));
+    \endcode
+
+    \sa wc_GmacSetKey
+*/
 WOLFSSL_API int wc_GmacUpdate(Gmac* gmac, const byte* iv, word32 ivSz,
                               const byte* authIn, word32 authInSz,
                               byte* authTag, word32 authTagSz)

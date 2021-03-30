@@ -34,7 +34,6 @@
 /*
 Possible ECC enable options:
  * HAVE_ECC:            Overall control of ECC                  default: on
- * HAVE_ECC_ENCRYPT:    ECC encrypt/decrypt w/AES and HKDF      default: off
  * HAVE_ECC_SIGN:       ECC sign                                default: on
  * HAVE_ECC_VERIFY:     ECC verify                              default: on
  * HAVE_ECC_DHE:        ECC build shared secret                 default: on
@@ -45,13 +44,6 @@ ECC Curve Types:
  * NO_ECC_SECP          Disables SECP curves                    default: off (not defined)
  */
 
-/*
-ECC Curve Sizes:
- * ECC_USER_CURVES: Allows custom combination of key sizes below
- * HAVE_ALL_CURVES: Enable all key sizes (on unless ECC_USER_CURVES is defined)
- * ECC_MIN_KEY_SZ: Minimum supported ECC key size
- * HAVE_ECC384: 384 bit key
- */
 #ifdef HAVE_ECC
 
 #include <wolfssl/wolfcrypt/ecc.h>
@@ -71,15 +63,6 @@ ECC Curve Sizes:
     #include <wolfcrypt/src/misc.c>
 #endif
 
-#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
-    #define GEN_MEM_ERR MP_MEM
-#elif defined(USE_FAST_MATH)
-    #define GEN_MEM_ERR FP_MEM
-#else
-    #define GEN_MEM_ERR MP_MEM
-#endif
-
-
 /* internal ECC states */
 enum {
     ECC_STATE_NONE = 0,
@@ -95,13 +78,6 @@ enum {
     ECC_STATE_VERIFY_RES,
 };
 
-
-/* map
-   ptmul -> mulmod
-*/
-
-/* 256-bit curve on by default whether user curves or not */
-
 #if (defined(HAVE_ECC384) || defined(HAVE_ALL_CURVES)) && ECC_MIN_KEY_SZ <= 384
     #define ECC384
 #endif
@@ -116,7 +92,7 @@ enum {
             #define CODED_SECP384R1_SZ 5
         #endif
         #ifndef WOLFSSL_ECC_CURVE_STATIC
-            static const ecc_oid_t ecc_oid_secp384r1[] = CODED_SECP384R1;
+static const ecc_oid_t ecc_oid_secp384r1[] = CODED_SECP384R1;
             #define CODED_SECP384R1_OID ecc_oid_secp384r1
         #else
 			#define ecc_oid_secp384r1 CODED_SECP384R1
@@ -358,12 +334,16 @@ static int wc_ecc_curve_load(const ecc_set_type* dp, ecc_curve_spec** pCurve,
     }
     return ret;
 }
+/*!
+    \ingroup ECC
 
-/* Retrieve the curve name for the ECC curve id.
- *
- * curve_id  The id of the curve.
- * returns the name stored from the curve if available, otherwise NULL.
- */
+    \brief This function retrieves the curve name for the ECC curve id.
+
+    \return the name stored from the curve if available, otherwise NULL.
+
+    \param curve_id  The id of the curve.
+*/
+
 const char* wc_ecc_get_name(int curve_id)
 {
     int curve_idx = wc_ecc_get_curve_idx(curve_id);
@@ -371,6 +351,20 @@ const char* wc_ecc_get_name(int curve_id)
         return NULL;
     return ecc_sets[curve_idx].name;
 }
+
+/*!
+    \ingroup ECC
+
+    \brief This function search for ecc_set based on curve_id or key size.
+
+    \return the ecc_set if available
+    \return BAD_FUNC_ARGS if keysize and curve id are invalid
+    \return ECC_BAD_ARG_E if keysize is greater than max ECC key
+
+    \param key  ECC key to use
+    \param keysize  size of ECC key
+    \param curve_id The id of the curve
+*/
 
 int wc_ecc_set_curve(ecc_key* key, int keysize, int curve_id)
 {
@@ -413,21 +407,22 @@ int wc_ecc_set_curve(ecc_key* key, int keysize, int curve_id)
 }
 
 
-#if !defined(WOLFSSL_ATECC508A) && !defined(WOLFSSL_ATECC608A)
-
-#if !defined(FREESCALE_LTC_ECC) && !defined(WOLFSSL_STM32_PKA)
-
 #if !defined(WOLFSSL_SP_MATH) || !defined(FP_ECC)
-/**
-   Perform a point multiplication
-   k    The scalar to multiply by
-   G    The base point
-   R    [out] Destination for kG
-   a    ECC curve parameter a
-   modulus  The modulus of the field the ECC curve is in
-   map      Boolean whether to map back to affine or not
+/*!
+    \ingroup ECC
+
+    \brief This function performs a point multiplication
+
+    \return MP_OKAY on success
+    \return ECC_BAD_ARG_E if input parameters are invalid
+
+    \param k    The scalar to multiply by
+    \param G    The base point
+    \param R    [out] Destination for kG
+    \param a    ECC curve parameter a
+    \param modulus  The modulus of the field the ECC curve is in
+    \param map      Boolean whether to map back to affine or not
                 (1==map, 0 == leave in projective)
-   return MP_OKAY on success
 */
 
 int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
@@ -448,91 +443,27 @@ int wc_ecc_mulmod_ex(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
 }
 #endif /* !WOLFSSL_SP_MATH || !FP_ECC */
 
-#ifndef FP_ECC
-/**
-   Perform a point multiplication
-   k    The scalar to multiply by
-   G    The base point
-   R    [out] Destination for kG
-   a    ECC curve parameter a
-   modulus  The modulus of the field the ECC curve is in
-   map      Boolean whether to map back to affine or not
-                (1==map, 0 == leave in projective)
-   return MP_OKAY on success
-*/
-int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
-                      mp_int* modulus, mp_int* order, WC_RNG* rng, int map,
-                      void* heap)
-{
-   if (k == NULL || G == NULL || R == NULL || modulus == NULL) {
-       return ECC_BAD_ARG_E;
-   }
+/*!
+    \ingroup ECC
 
-   (void)a;
-   (void)order;
-   (void)rng;
+    \brief This function performs fixed point mulmod global
 
-#ifdef WOLFSSL_SP_384
-   if (mp_count_bits(modulus) == 384) {
-       return sp_ecc_mulmod_384(k, G, R, map, heap);
-   }
-#endif
-   return ECC_BAD_ARG_E;
-}
-#endif /* !FP_ECC */
+    \return MP_OKAY on success
+    \return ECC_BAD_ARG_E if input parameters are invalid
 
-#endif /* !FREESCALE_LTC_ECC && !WOLFSSL_STM32_PKA */
-
-/** ECC Fixed Point mulmod global
-    k        The multiplicand
-    G        Base point to multiply
-    R        [out] Destination of product
-    a        ECC curve parameter a
-    modulus  The modulus for the curve
-    map      [boolean] If non-zero maps the point back to affine coordinates,
-             otherwise it's left in jacobian-montgomery form
-    return MP_OKAY if successful
+    \param k        The multiplicand
+    \param G        Base point to multiply
+    \param R        [out] Destination of product
+    \param a        ECC curve parameter a
+    \param modulus  The modulus for the curve
+    \param map      [boolean] If non-zero maps the point back to affine coordinates,
+                     otherwise it's left in jacobian-montgomery form
 */
 int wc_ecc_mulmod(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
                   mp_int* modulus, int map)
 {
     return wc_ecc_mulmod_ex(k, G, R, a, modulus, map, NULL);
 }
-
-#endif /* !WOLFSSL_ATECC508A */
-
-/**
- * use a heap hint when creating new ecc_point
- * return an allocated point on success or NULL on failure
- */
-ecc_point* wc_ecc_new_point_h(void* heap)
-{
-   ecc_point* p;
-
-   (void)heap;
-
-   p = (ecc_point*)XMALLOC(sizeof(ecc_point), heap, DYNAMIC_TYPE_ECC);
-   if (p == NULL) {
-      return NULL;
-   }
-   XMEMSET(p, 0, sizeof(ecc_point));
-
-   if (mp_init_multi(p->x, p->y, p->z, NULL, NULL, NULL) != MP_OKAY) {
-      XFREE(p, heap, DYNAMIC_TYPE_ECC);
-      return NULL;
-   }
-   return p;
-}
-
-/**
-   Allocate a new ECC point
-   return A newly allocated point or NULL on error
-*/
-ecc_point* wc_ecc_new_point(void)
-{
-  return wc_ecc_new_point_h(NULL);
-}
-
 
 void wc_ecc_del_point_h(ecc_point* p, void* heap)
 {
@@ -1882,6 +1813,39 @@ int wc_ecc_is_point(ecc_point* ecp, mp_int* a, mp_int* b, mp_int* prime)
    return WC_KEY_SIZE_E;
 }
 
+/*!
+    \ingroup ECC
+
+    \brief Perform sanity checks on ecc key validity.
+
+    \return MP_OKAY Success, key is OK.
+    \return BAD_FUNC_ARG Returns if key is NULL.
+    \return ECC_INF_E Returns if wc_ecc_point_is_at_infinity returns 1.
+
+    \param key Pointer to key to check.
+
+    _Example_
+    \code
+    ecc_key key;
+    WC_WC_RNG rng;
+    int check_result;
+    wc_ecc_init(&key);
+    wc_InitRng(&rng);
+    wc_ecc_make_key(&rng, 32, &key);
+    check_result = wc_ecc_check_key(&key);
+
+    if (check_result == MP_OKAY)
+    {
+        // key check succeeded
+    }
+    else
+    {
+        // key check failed
+    }
+    \endcode
+
+    \sa wc_ecc_point_is_at_infinity
+*/
 
 /* perform sanity checks on ecc key validity, 0 on success */
 int wc_ecc_check_key(ecc_key* key)
@@ -1902,7 +1866,65 @@ int wc_ecc_check_key(ecc_key* key)
 }
 
 #ifdef HAVE_ECC_KEY_IMPORT
-/* import public ECC key in ANSI X9.63 format */
+/*!
+    \ingroup ECC
+
+    \brief This function imports a public ECC key from a buffer containing the
+    key stored in ANSI X9.63 format. This function will handle both compressed
+    and uncompressed keys, as long as compressed keys are enabled at compile
+    time through the HAVE_COMP_KEY option.
+
+    \return 0 Returned on successfully importing the ecc_key
+    \return NOT_COMPILED_IN Returned if the HAVE_COMP_KEY was not enabled at
+    compile time, but the key is stored in compressed format
+    \return ECC_BAD_ARG_E Returned if in or key evaluate to NULL, or the
+    inLen is even (according to the x9.63 standard, the key must be odd)
+    \return MEMORY_E Returned if there is an error allocating memory
+    \return ASN_PARSE_E Returned if there is an error parsing the ECC key;
+    may indicate that the ECC key is not stored in valid ANSI X9.63 format
+    \return IS_POINT_E Returned if the public key exported is not a point
+    on the ECC curve
+    \return MP_INIT_E if there is an error processing the
+    ecc_key
+    \return MP_READ_E if there is an error processing the
+    ecc_key
+    \return MP_CMP_E if there is an error processing the
+    ecc_key
+    \return MP_INVMOD_E if there is an error processing the
+    ecc_key
+    \return MP_EXPTMOD_E if there is an error processing the
+    ecc_key
+    \return MP_MOD_E if there is an error processing the
+    ecc_key
+    \return MP_MUL_E if there is an error processing the
+    ecc_key
+    \return MP_ADD_E if there is an error processing the
+    ecc_key
+    \return MP_MULMOD_E if there is an error processing the
+    ecc_key
+    \return MP_TO_E if there is an error processing the ecc_key
+    \return MP_MEM if there is an error processing the ecc_key
+
+    \param in pointer to the buffer containing the ANSI x9.63 formatted ECC key
+    \param inLen length of the input buffer
+    \param key pointer to the ecc_key object in which to store the imported key
+
+    _Example_
+    \code
+    int ret;
+    byte buff[] = { initialize with ANSI X9.63 formatted key };
+
+    ecc_key pubKey;
+    wc_ecc_init(&pubKey);
+
+    ret = wc_ecc_import_x963(buff, sizeof(buff), &pubKey);
+    if ( ret != 0) {
+        // error importing key
+    }
+    \endcode
+
+    \sa wc_ecc_import_private_key
+*/
 int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
                           int curve_id)
 {
@@ -1979,7 +2001,51 @@ int wc_ecc_import_x963(const byte* in, word32 inLen, ecc_key* key)
 #endif /* HAVE_ECC_KEY_IMPORT */
 
 #ifdef HAVE_ECC_KEY_IMPORT
-/* import private key, public part optional if (pub) passed as NULL */
+/*!
+    \ingroup ECC
+
+    \brief This function imports a public/private ECC key pair from a buffer
+    containing the raw private key, and a second buffer containing the ANSI
+    X9.63 formatted public key. This function will handle both compressed and
+    uncompressed keys, as long as compressed keys are enabled at compile time
+    through the HAVE_COMP_KEY option.
+
+    \return 0 Returned on successfully importing the ecc_key
+    \return ECC_BAD_ARG_E Returned if in or key evaluate to NULL, or the
+    inLen is even (according to the x9.63 standard, the key must be odd)
+    \return MEMORY_E Returned if there is an error allocating memory
+    \return ASN_PARSE_E Returned if there is an error parsing the ECC key;
+    may indicate that the ECC key is not stored in valid ANSI X9.63 format
+    \return IS_POINT_E Returned if the public key exported is not a point
+    on the ECC curve
+    \return one of the following if there is an error processing the ecc_key:
+            MP_INIT_E, MP_READ_E, MP_CMP_E, MP_INVMOD_E MP_EXPTMOD_E MP_MOD_E MP_MUL_E
+            MP_ADD_E MP_MULMOD_E MP_TO_E MP_MEM
+
+    \param priv pointer to the buffer containing the raw private key
+    \param privSz size of the private key buffer
+    \param pub pointer to the buffer containing the ANSI x9.63 formatted ECC
+    public key
+    \param pubSz length of the public key input buffer
+    \param key pointer to the ecc_key object in which to store the imported
+    private/public key pair
+
+    _Example_
+    \code
+    int ret;
+    byte pub[] = { initialize with ANSI X9.63 formatted key };
+    byte priv[] = { initialize with the raw private key };
+
+    ecc_key key;
+    wc_ecc_init(&key);
+    ret = wc_ecc_import_private_key(priv, sizeof(priv), pub, sizeof(pub),
+    &key);
+    if ( ret != 0) {
+        // error importing key
+    }
+    \endcode
+
+*/
 int wc_ecc_import_private_key_ex(const byte* priv, word32 privSz,
                                  const byte* pub, word32 pubSz, ecc_key* key,
                                  int curve_id)
@@ -2023,14 +2089,49 @@ int wc_ecc_import_private_key(const byte* priv, word32 privSz, const byte* pub,
 #endif /* HAVE_ECC_KEY_IMPORT */
 
 #ifndef NO_ASN
-/**
-   Convert ECC R,S to signature
-   r       R component of signature
-   s       S component of signature
-   out     DER-encoded ECDSA signature
-   outlen  [in/out] output buffer size, output signature size
-   return  MP_OKAY on success
+/*!
+    \ingroup ECC
+
+    \brief This function converts the R and S portions of an ECC signature
+    into a DER-encoded ECDSA signature. This function also stores the length
+    written to the output buffer, out, in outlen.
+
+    \return 0 Returned on successfully converting the signature
+    \return ECC_BAD_ARG_E Returned if any of the input parameters evaluate
+    to NULL, or if the input buffer is not large enough to hold the
+    DER-encoded ECDSA signature
+    \return one of the following if there is an error processing:
+            MP_INIT_E MP_READ_E MP_CMP_E MP_INVMOD_E MP_EXPTMOD_E MP_MOD_E
+            MP_MUL_E MP_ADD_E MP_MULMOD_E MP_TO_E MP_MEM
+
+    \param r pointer to the buffer containing the R portion of the signature as a string
+    \param s pointer to the buffer containing the S portion of the signature as a string
+    \param out pointer to the buffer in which to store the DER-encoded ECDSA signature
+    \param outlen length of the output buffer available. Will store the bytes
+    written to the buffer after successfully converting the signature to
+    ECDSA format
+
+    _Example_
+    \code
+    int ret;
+    ecc_key key;
+    // initialize key, generate R and S
+
+    char r[] = { initialize with R };
+    char s[] = { initialize with S };
+    byte sig[wc_ecc_sig_size(key)];
+    // signature size will be 2 * ECC key size + ~10 bytes for ASN.1 overhead
+    word32 sigSz = sizeof(sig);
+    ret = wc_ecc_rs_to_sig(r, s, sig, &sigSz);
+    if ( ret != 0) {
+        // error converting parameters to signature
+    }
+    \endcode
+
+    \sa wc_ecc_sign_hash
+    \sa wc_ecc_sig_size
 */
+
 int wc_ecc_rs_to_sig(const char* r, const char* s, byte* out, word32* outlen)
 {
     int err;
@@ -2189,24 +2290,6 @@ static int wc_ecc_import_raw_private(ecc_key* key, const char* qx,
     return err;
 }
 
-/**
-   Import raw ECC key
-   key       The destination ecc_key structure
-   qx        x component of the public key, as ASCII hex string
-   qy        y component of the public key, as ASCII hex string
-   d         private key, as ASCII hex string, optional if importing public
-             key only
-   dp        Custom ecc_set_type
-   return    MP_OKAY on success
-*/
-int wc_ecc_import_raw_ex(ecc_key* key, const char* qx, const char* qy,
-                   const char* d, int curve_id)
-{
-    return wc_ecc_import_raw_private(key, qx, qy, d, curve_id,
-        WC_TYPE_HEX_STR);
-
-}
-
 /* Import x, y and optional private (d) as unsigned binary */
 int wc_ecc_import_unsigned(ecc_key* key, byte* qx, byte* qy,
                    byte* d, int curve_id)
@@ -2328,6 +2411,19 @@ int wc_ecc_set_rng(ecc_key* key, WC_RNG* rng)
 }
 #endif
 
+/*!
+    \ingroup ECC
+
+    \brief This function finds and returns a matching OID sum.
+
+    \return oid if found
+    \return BAD_FUNC_ARG if oidSum is zero
+
+    \param oidSum
+    \param oid
+    \param oidSz
+
+*/
 
 int wc_ecc_get_oid(word32 oidSum, const byte** oid, word32* oidSz)
 {

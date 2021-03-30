@@ -726,20 +726,20 @@ int GetSerialNumber(const byte* input, word32* inOutIdx,
 
 #ifdef HAVE_ECC
 
-    /* return 0 on success if the ECC curve oid sum is supported */
-    static int CheckCurve(word32 oid)
-    {
-        int ret = 0;
-        word32 oidSz = 0;
+/* return 0 on success if the ECC curve oid sum is supported */
+static int CheckCurve(word32 oid)
+{
+    int ret = 0;
+    word32 oidSz = 0;
 
-        ret = wc_ecc_get_oid(oid, NULL, &oidSz);
-        if (ret < 0 || oidSz == 0) {
-            WOLFSSL_MSG("CheckCurve not found");
-            ret = ALGO_ID_E;
-        }
-
-        return ret;
+    ret = wc_ecc_get_oid(oid, NULL, &oidSz);
+    if (ret < 0 || oidSz == 0) {
+        WOLFSSL_MSG("CheckCurve not found");
+        ret = ALGO_ID_E;
     }
+
+    return ret;
+}
 
 /* Der Encode r & s ints into out, outLen is (in/out) size */
 int StoreECC_DSA_Sig(byte* out, word32* outLen, mp_int* r, mp_int* s)
@@ -931,6 +931,38 @@ int DecodeECC_DSA_Sig(const byte* sig, word32 sigLen, mp_int* r, mp_int* s)
     return 0;
 }
 
+/*!
+    \ingroup ECC
+
+    \brief This function parses a DER-formatted ECC private key, extracts the
+    public key and stores it in the given ecc_key structure. It also sets the
+    distance parsed in idx.
+
+    \return 0 Returned upon successfully parsing the private key from the DER
+    encoded input
+    \return BAD_FUNC_ARG Returned if key or output is null
+    \return ASN_PARSE_E Returned if there is an error parsing the public key
+    from the input buffer. This may happen if the input public key is not
+    properly formatted according to ASN.1 standards
+    \return BUFFER_E when there is not enough data to parse.
+    \return ASN_EXPECT_0_E Returned if the input key is not correctly
+    formatted according to ASN.1 standards
+    \return ASN_BITSTR_E Returned if the input key is not correctly formatted
+    according to ASN.1 standards
+    \return ASN_ECC_KEY_E returned if there is an error reading the public key
+    elements of the ECC key input
+    \return ECC_CURVE_OID_E if ECC curve oid sum is unsupported
+
+    \param input pointer to the buffer containing the DER formatted private
+    key to decode
+    \param inOutIdx pointer to the index in the buffer at which the key begins
+    (usually 0). As a side effect of this function, inOutIdx will store the
+    distance parsed through the input buffer
+    \param key pointer to the ecc_key structure in which to store the decoded
+    private key
+    \param inSz size of the input buffer
+
+*/
 
 int wc_EccPrivateKeyDecode(const byte* input, word32* inOutIdx, ecc_key* key,
                         word32 inSz)
@@ -1033,6 +1065,39 @@ int wc_EccPrivateKeyDecode(const byte* input, word32* inOutIdx, ecc_key* key,
 
     return ret;
 }
+
+/*!
+    \ingroup ECC
+
+    \brief This function parses a DER-formatted ECC public key, extracts the
+    public key and stores it in the given ecc_key structure. It also sets the
+    distance parsed in idx.
+
+    \return 0 Returned upon successfully parsing the public key from the DER
+    encoded input
+    \return BAD_FUNC_ARG Returned if key or output is null
+    \return ASN_PARSE_E Returned if there is an error parsing the public key
+    from the input buffer. This may happen if the input public key is not
+    properly formatted according to ASN.1 standards
+    \return BUFFER_E when there is not enough data to parse.
+    \return ASN_EXPECT_0_E Returned if the input key is not correctly
+    formatted according to ASN.1 standards
+    \return ASN_BITSTR_E Returned if the input key is not correctly formatted
+    according to ASN.1 standards
+    \return ASN_ECC_KEY_E returned if there is an error reading the public key
+    elements of the ECC key input
+    \return ECC_CURVE_OID_E if ECC curve oid sum is unsupported
+
+    \param input pointer to the buffer containing the DER formatted public
+    key to decode
+    \param inOutIdx pointer to the index in the buffer at which the key begins
+    (usually 0). As a side effect of this function, inOutIdx will store the
+    distance parsed through the input buffer
+    \param key pointer to the ecc_key structure in which to store the decoded
+    private key
+    \param inSz size of the input buffer
+
+*/
 
 int wc_EccPublicKeyDecode(const byte* input, word32* inOutIdx,
                           ecc_key* key, word32 inSz)

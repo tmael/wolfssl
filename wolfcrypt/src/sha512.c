@@ -314,7 +314,37 @@ static int InitSha384(wc_Sha384* sha384)
 
     return 0;
 }
+/*!
+    \ingroup SHA
 
+    \brief Can be called to continually hash the provided byte array
+    of length len.
+
+    \return 0 Returned upon successfully adding the data to the digest.
+
+    \param sha384 pointer to the sha384 structure to use for encryption
+    \param data the data to be hashed
+    \param len length of data to be hashed
+
+    _Example_
+    \code
+    Sha384 sha384[1];
+    byte data[] = { Data to be hashed };
+    word32 len = sizeof(data);
+
+    if ((ret = wc_InitSha384(sha384)) != 0) {()
+       WOLFSSL_MSG("wc_InitSha384 failed");
+    }
+    else {
+       wc_Sha384Update(sha384, data, len);
+       wc_Sha384Final(sha384, hash);
+    }
+    \endcode
+
+    \sa wc_Sha384Hash
+    \sa wc_Sha384Final
+    \sa wc_InitSha384
+*/
 int wc_Sha384Update(wc_Sha384* sha384, const byte* data, word32 len)
 {
     if (sha384 == NULL || (data == NULL && len > 0)) {
@@ -344,7 +374,35 @@ int wc_Sha384FinalRaw(wc_Sha384* sha384, byte* hash)
 
     return 0;
 }
+/*!
+    \ingroup SHA
 
+    \brief Finalizes hashing of data. Result is placed into hash.
+
+    \return 0 Returned upon successfully finalizing.
+
+    \param sha384 pointer to the sha384 structure to use for encryption
+    \param hash Byte array to hold hash value.
+
+    _Example_
+    \code
+    Sha384 sha384[1];
+    byte data[] = { Data to be hashed };
+    word32 len = sizeof(data);
+
+    if ((ret = wc_InitSha384(sha384)) != 0) {
+       WOLFSSL_MSG("wc_InitSha384 failed");
+    }
+    else {
+       wc_Sha384Update(sha384, data, len);
+       wc_Sha384Final(sha384, hash);
+    }
+    \endcode
+
+    \sa wc_Sha384Hash
+    \sa wc_Sha384Final
+    \sa wc_InitSha384
+*/
 int wc_Sha384Final(wc_Sha384* sha384, byte* hash)
 {
     int ret;
@@ -361,7 +419,20 @@ int wc_Sha384Final(wc_Sha384* sha384, byte* hash)
 
     return InitSha384(sha384);  /* reset state */
 }
+/*!
+    \ingroup SHA
 
+    \brief This function initializes wc_Sha384. It calls InitSha384 function.
+
+    \return 0 Returned upon successfully initializing
+    \return BAD_FUNC_ARG error returned if wc_Sha384 is null
+
+    \param wc_Sha384 pointer to the wc_Sha384 structure to use for hash calculation
+    \param heap pointer. This is not used in CERT mode
+    \param devId. This is not used in CERT mode
+
+    \sa InitSha384
+*/
 int wc_InitSha384_ex(wc_Sha384* sha384, void* heap, int devId)
 {
     int ret;
@@ -379,12 +450,30 @@ int wc_InitSha384_ex(wc_Sha384* sha384, void* heap, int devId)
 
     return ret;
 }
+/*!
+    \ingroup SHA
 
+    \brief This function initializes SHA384. This is automatically called
+    by wc_Sha384Hash.
+
+    \return 0 Returned upon successfully initializing
+
+    \param sha384 pointer to the sha384 structure to use for encryption
+*/
 int wc_InitSha384(wc_Sha384* sha384)
 {
     return wc_InitSha384_ex(sha384, NULL, INVALID_DEVID);
 }
+/*!
+    \ingroup SHA
 
+    \brief This function doesn't do anything but it's supplied for compatibility
+
+    \return none No returns.
+
+    \param wc_Sha384 Pointer to the wc_Sha384 structure to be freed.
+
+*/
 void wc_Sha384Free(wc_Sha384* sha384)
 {
     if (sha384 == NULL)
@@ -394,7 +483,18 @@ void wc_Sha384Free(wc_Sha384* sha384)
 #endif /* WOLFSSL_SHA384 */
 
 #ifdef WOLFSSL_SHA384
+/*!
+    \ingroup SHA
 
+    \brief Gets hash data. Result is placed into hash.  Does not
+    reset state of wc_Sha384 struct.
+
+    \return 0 Returned upon successfully finalizing.
+    \return BAD_FUNC_ARG Error returned if sha384 or hash is null
+
+    \param sha384 pointer to the wc_Sha384 structure to use for hash calculation
+    \param hash Byte array to hold hash value.
+*/
 int wc_Sha384GetHash(wc_Sha384* sha384, byte* hash)
 {
     int ret;
@@ -409,6 +509,18 @@ int wc_Sha384GetHash(wc_Sha384* sha384, byte* hash)
     }
     return ret;
 }
+/*!
+    \ingroup SHA
+
+    \brief This function is used to copy a SHA structure
+
+    \return 0 Success
+    \return BAD_FUNC_ARG Error returned if src or dst is null
+
+    \param wc_Sha384 Pointer to the wc_Sha384 structure source
+    \param wc_Sha384 Pointer to the wc_Sha384 structure destination
+
+*/
 int wc_Sha384Copy(wc_Sha384* src, wc_Sha384* dst)
 {
     int ret = 0;
