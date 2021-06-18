@@ -2450,5 +2450,385 @@ int wc_ecc_get_oid(word32 oidSum, const byte** oid, word32* oidSz)
 
     return NOT_COMPILED_IN;
 }
+#ifdef HAVE_ECC_KEY_EXPORT
+/* export ecc key to component form, d is optional if only exporting public
+ * encType is WC_TYPE_UNSIGNED_BIN or WC_TYPE_HEX_STR
+ * return MP_OKAY on success */
+int wc_ecc_export_ex(ecc_key* key, byte* qx, word32* qxLen,
+                 byte* qy, word32* qyLen, byte* d, word32* dLen, int encType)
+{
+    int err = 0;
+    word32 keySz;
+
+    if (key == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    if (wc_ecc_is_valid_idx(key->idx) == 0 || key->dp == NULL) {
+        return ECC_BAD_ARG_E;
+    }
+    keySz = key->dp->size;
+
+    /* private key, d */
+    if (d != NULL) {
+        if (dLen == NULL ||
+            (key->type != ECC_PRIVATEKEY && key->type != ECC_PRIVATEKEY_ONLY))
+            return BAD_FUNC_ARG;
+
+    #if defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A)
+        /* Hardware cannot export private portion */
+        return NOT_COMPILED_IN;
+    #else
+    #ifdef WOLFSSL_QNX_CAAM
+        if (encType == WC_TYPE_BLACK_KEY) {
+            if (key->blackKey > 0) {
+                if (*dLen < keySz + WC_CAAM_MAC_SZ) {
+                    *dLen = keySz + WC_CAAM_MAC_SZ;
+                    return BUFFER_E;
+                }
+
+                if (caamReadPartition(key->blackKey, d, keySz + WC_CAAM_MAC_SZ) != 0)
+                    return WC_HW_E;
+
+                *dLen = keySz + WC_CAAM_MAC_SZ;
+            }
+            else {
+                WOLFSSL_MSG("No black key stored in structure");
+                return BAD_FUNC_ARG;
+            }
+        }
+        else
+        #endif
+        {
+            err = wc_export_int(&key->k, d, dLen, keySz, encType);
+            if (err != MP_OKAY)
+                return err;
+        }
+    #endif
+    }
+
+    /* public x component */
+    if (qx != NULL) {
+        if (qxLen == NULL || key->type == ECC_PRIVATEKEY_ONLY)
+            return BAD_FUNC_ARG;
+
+        err = wc_export_int(key->pubkey.x, qx, qxLen, keySz, encType);
+        if (err != MP_OKAY)
+            return err;
+    }
+
+    /* public y component */
+    if (qy != NULL) {
+        if (qyLen == NULL || key->type == ECC_PRIVATEKEY_ONLY)
+            return BAD_FUNC_ARG;
+
+        err = wc_export_int(key->pubkey.y, qy, qyLen, keySz, encType);
+        if (err != MP_OKAY)
+            return err;
+    }
+
+    return err;
+}
+
+
+/* export ecc private key only raw, outLen is in/out size as unsigned bin
+   return MP_OKAY on success */
+int wc_ecc_export_private_only(ecc_key* key, byte* out, word32* outLen)
+{
+    if (out == NULL || outLen == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+#ifdef WOLFSSL_QNX_CAAM
+    /* check if black key in secure memory */
+    if (key->blackKey > 0) {
+        return wc_ecc_export_ex(key, NULL, NULL, NULL, NULL, out, outLen,
+            WC_TYPE_BLACK_KEY);
+    }
+#endif
+
+    return wc_ecc_export_ex(key, NULL, NULL, NULL, NULL, out, outLen,
+        WC_TYPE_UNSIGNED_BIN);
+}
+
+/* export public key to raw elements including public (Qx,Qy) as unsigned bin
+ * return MP_OKAY on success, negative on error */
+int wc_ecc_export_public_raw(ecc_key* key, byte* qx, word32* qxLen,
+                             byte* qy, word32* qyLen)
+{
+    if (qx == NULL || qxLen == NULL || qy == NULL || qyLen == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    return wc_ecc_export_ex(key, qx, qxLen, qy, qyLen, NULL, NULL,
+        WC_TYPE_UNSIGNED_BIN);
+}
+
+/* export ecc key to raw elements including public (Qx,Qy) and
+ *   private (d) as unsigned bin
+ * return MP_OKAY on success, negative on error */
+int wc_ecc_export_private_raw(ecc_key* key, byte* qx, word32* qxLen,
+                              byte* qy, word32* qyLen, byte* d, word32* dLen)
+{
+    return wc_ecc_export_ex(key, qx, qxLen, qy, qyLen, d, dLen,
+        WC_TYPE_UNSIGNED_BIN);
+}
+
+/* export point to der */
+
+int wc_ecc_export_point_der_ex(const int curve_idx, ecc_point* point, byte* out,
+                               word32* outLen, int compressed)
+{
+    if (compressed == 0)
+        return wc_ecc_export_point_der(curve_idx, point, out, outLen);
+#ifdef HAVE_COMP_KEY
+    else
+        return wc_ecc_export_point_der_compressed(curve_idx, point, out, outLen);
+#else
+    return NOT_COMPILED_IN;
+#endif
+}
+
+int wc_ecc_export_point_der(const int curve_idx, ecc_point* point, byte* out,
+                            word32* outLen)
+{
+    int    ret = MP_OKAY;
+    word32 numlen;
+#ifdef WOLFSSL_SMALL_STACK
+    byte*  buf;
+#else
+    byte   buf[ECC_BUFSIZE];
+#endif
+
+    if ((curve_idx < 0) || (wc_ecc_is_valid_idx(curve_idx) == 0))
+        return ECC_BAD_ARG_E;
+
+    numlen = ecc_sets[curve_idx].size;
+
+    /* return length needed only */
+    if (point != NULL && out == NULL && outLen != NULL) {
+        *outLen = 1 + 2*numlen;
+        return LENGTH_ONLY_E;
+    }
+
+    if (point == NULL || out == NULL || outLen == NULL)
+        return ECC_BAD_ARG_E;
+
+    if (*outLen < (1 + 2*numlen)) {
+        *outLen = 1 + 2*numlen;
+        return BUFFER_E;
+    }
+
+    /* store byte point type */
+    out[0] = ECC_POINT_UNCOMP;
+
+#ifdef WOLFSSL_SMALL_STACK
+    buf = (byte*)XMALLOC(ECC_BUFSIZE, NULL, DYNAMIC_TYPE_ECC_BUFFER);
+    if (buf == NULL)
+        return MEMORY_E;
+#endif
+
+    /* pad and store x */
+    XMEMSET(buf, 0, ECC_BUFSIZE);
+    ret = mp_to_unsigned_bin(point->x, buf +
+                                 (numlen - mp_unsigned_bin_size(point->x)));
+    if (ret != MP_OKAY)
+        goto done;
+    XMEMCPY(out+1, buf, numlen);
+
+    /* pad and store y */
+    XMEMSET(buf, 0, ECC_BUFSIZE);
+    ret = mp_to_unsigned_bin(point->y, buf +
+                                 (numlen - mp_unsigned_bin_size(point->y)));
+    if (ret != MP_OKAY)
+        goto done;
+    XMEMCPY(out+1+numlen, buf, numlen);
+
+    *outLen = 1 + 2*numlen;
+
+done:
+#ifdef WOLFSSL_SMALL_STACK
+    XFREE(buf, NULL, DYNAMIC_TYPE_ECC_BUFFER);
+#endif
+
+    return ret;
+}
+
+
+/* export point to der */
+#ifdef HAVE_COMP_KEY
+int wc_ecc_export_point_der_compressed(const int curve_idx, ecc_point* point,
+                                       byte* out, word32* outLen)
+{
+    int    ret = MP_OKAY;
+    word32 numlen;
+    word32 output_len;
+#ifdef WOLFSSL_SMALL_STACK
+    byte*  buf;
+#else
+    byte   buf[ECC_BUFSIZE];
+#endif
+
+    if ((curve_idx < 0) || (wc_ecc_is_valid_idx(curve_idx) == 0))
+        return ECC_BAD_ARG_E;
+
+    numlen = ecc_sets[curve_idx].size;
+    output_len = 1 + numlen; /* y point type + x */
+
+    /* return length needed only */
+    if (point != NULL && out == NULL && outLen != NULL) {
+        *outLen = output_len;
+        return LENGTH_ONLY_E;
+    }
+
+    if (point == NULL || out == NULL || outLen == NULL)
+        return ECC_BAD_ARG_E;
+
+
+    if (*outLen < output_len) {
+        *outLen = output_len;
+        return BUFFER_E;
+    }
+
+    /* store byte point type */
+    out[0] = mp_isodd(point->y) == MP_YES ? ECC_POINT_COMP_ODD :
+                                            ECC_POINT_COMP_EVEN;
+
+#ifdef WOLFSSL_SMALL_STACK
+    buf = (byte*)XMALLOC(ECC_BUFSIZE, NULL, DYNAMIC_TYPE_ECC_BUFFER);
+    if (buf == NULL)
+        return MEMORY_E;
+#endif
+
+    /* pad and store x */
+    XMEMSET(buf, 0, ECC_BUFSIZE);
+    ret = mp_to_unsigned_bin(point->x, buf +
+                                 (numlen - mp_unsigned_bin_size(point->x)));
+    if (ret != MP_OKAY)
+        goto done;
+    XMEMCPY(out+1, buf, numlen);
+
+    *outLen = output_len;
+
+done:
+#ifdef WOLFSSL_SMALL_STACK
+    XFREE(buf, NULL, DYNAMIC_TYPE_ECC_BUFFER);
+#endif
+
+    return ret;
+}
+#endif /* HAVE_COMP_KEY */
+
+/* export public ECC key in ANSI X9.63 format */
+int wc_ecc_export_x963(ecc_key* key, byte* out, word32* outLen)
+{
+   int    ret = MP_OKAY;
+   word32 numlen;
+#ifdef WOLFSSL_SMALL_STACK
+   byte*  buf;
+#else
+   byte   buf[ECC_BUFSIZE];
+#endif
+   word32 pubxlen, pubylen;
+
+   /* return length needed only */
+   if (key != NULL && out == NULL && outLen != NULL) {
+      /* if key hasn't been setup assume max bytes for size estimation */
+      numlen = key->dp ? key->dp->size : MAX_ECC_BYTES;
+      *outLen = 1 + 2*numlen;
+      return LENGTH_ONLY_E;
+   }
+
+   if (key == NULL || out == NULL || outLen == NULL)
+      return ECC_BAD_ARG_E;
+
+   if (key->type == ECC_PRIVATEKEY_ONLY)
+       return ECC_PRIVATEONLY_E;
+
+#ifdef WOLFSSL_QNX_CAAM
+    /* check if public key in secure memory */
+    if (key->securePubKey > 0) {
+        int keySz = wc_ecc_size(key);
+
+        /* store byte point type */
+        out[0] = ECC_POINT_UNCOMP;
+
+        if (caamReadPartition((CAAM_ADDRESS)key->securePubKey, out+1, keySz*2) != 0)
+            return WC_HW_E;
+
+        *outLen = 1 + 2*keySz;
+        return MP_OKAY;
+    }
+#endif
+
+   if (key->type == 0 || wc_ecc_is_valid_idx(key->idx) == 0 || key->dp == NULL){
+       return ECC_BAD_ARG_E;
+   }
+
+   numlen = key->dp->size;
+
+    /* verify room in out buffer */
+   if (*outLen < (1 + 2*numlen)) {
+      *outLen = 1 + 2*numlen;
+      return BUFFER_E;
+   }
+
+   /* verify public key length is less than key size */
+   pubxlen = mp_unsigned_bin_size(key->pubkey.x);
+   pubylen = mp_unsigned_bin_size(key->pubkey.y);
+   if ((pubxlen > numlen) || (pubylen > numlen)) {
+      WOLFSSL_MSG("Public key x/y invalid!");
+      return BUFFER_E;
+   }
+
+   /* store byte point type */
+   out[0] = ECC_POINT_UNCOMP;
+
+#ifdef WOLFSSL_SMALL_STACK
+   buf = (byte*)XMALLOC(ECC_BUFSIZE, NULL, DYNAMIC_TYPE_ECC_BUFFER);
+   if (buf == NULL)
+      return MEMORY_E;
+#endif
+
+   /* pad and store x */
+   XMEMSET(buf, 0, ECC_BUFSIZE);
+   ret = mp_to_unsigned_bin(key->pubkey.x, buf + (numlen - pubxlen));
+   if (ret != MP_OKAY)
+      goto done;
+   XMEMCPY(out+1, buf, numlen);
+
+   /* pad and store y */
+   XMEMSET(buf, 0, ECC_BUFSIZE);
+   ret = mp_to_unsigned_bin(key->pubkey.y, buf + (numlen - pubylen));
+   if (ret != MP_OKAY)
+      goto done;
+   XMEMCPY(out+1+numlen, buf, numlen);
+
+   *outLen = 1 + 2*numlen;
+
+done:
+#ifdef WOLFSSL_SMALL_STACK
+   XFREE(buf, NULL, DYNAMIC_TYPE_ECC_BUFFER);
+#endif
+
+   return ret;
+}
+
+
+/* export public ECC key in ANSI X9.63 format, extended with
+ * compression option */
+int wc_ecc_export_x963_ex(ecc_key* key, byte* out, word32* outLen,
+                          int compressed)
+{
+    if (compressed == 0)
+        return wc_ecc_export_x963(key, out, outLen);
+#ifdef HAVE_COMP_KEY
+    else
+        return wc_ecc_export_x963_compressed(key, out, outLen);
+#else
+    return NOT_COMPILED_IN;
+#endif
+}
+#endif /* HAVE_ECC_KEY_EXPORT */
 
 #endif /* HAVE_ECC */

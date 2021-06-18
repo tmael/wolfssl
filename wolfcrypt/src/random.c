@@ -51,11 +51,22 @@ This library contains implementation for the random number generator.
     #include <wolfcrypt/src/misc.c>
 #endif
 
-/* include headers that may be needed to get good seed */
-#include <fcntl.h>
-#ifndef EBSNET
-	#include <unistd.h>
+#if defined(WOLFSSL_SGX)
+    #include <sgx_trts.h>
+#elif defined(NO_DEV_RANDOM)
+#elif defined(CUSTOM_RAND_GENERATE)
+#elif defined(CUSTOM_RAND_GENERATE_BLOCK)
+#elif defined(CUSTOM_RAND_GENERATE_SEED)
+#elif defined(WOLFSSL_GENSEED_FORTEST)
+#elif defined(WOLFSSL_MDK_ARM)
+#else
+    /* include headers that may be needed to get good seed */
+    #include <fcntl.h>
+    #ifndef EBSNET
+        #include <unistd.h>
+    #endif
 #endif
+
 
 /* Start NIST DRBG code */
 #ifdef HAVE_HASHDRBG
@@ -138,7 +149,7 @@ enum {
     drbgReseed    = 1,
     drbgGenerateW = 2,
     drbgGenerateH = 3,
-    drbgInitV
+    drbgInitV     = 4
 };
 
 typedef struct DRBG_internal DRBG_internal;
@@ -533,7 +544,7 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
             }
 
             if (ret == DRBG_SUCCESS)
-	      ret = Hash_DRBG_Instantiate((DRBG_internal *)rng->drbg,
+                ret = Hash_DRBG_Instantiate((DRBG_internal *)rng->drbg,
                             seed + SEED_BLOCK_SZ, seedSz - SEED_BLOCK_SZ,
                             nonce, nonceSz, rng->heap, devId);
 
@@ -994,6 +1005,21 @@ static int wc_RNG_HealthTestLocal(int reseed)
     /* #define CUSTOM_RAND_GENERATE_BLOCK myRngFunc
      * extern int myRngFunc(byte* output, word32 sz);
      */
+
+#elif defined(WOLFSSL_SAFERTOS) || defined(WOLFSSL_LEANPSK) || \
+      defined(WOLFSSL_IAR_ARM)  || defined(WOLFSSL_MDK_ARM) || \
+      defined(WOLFSSL_uITRON4)  || defined(WOLFSSL_uTKERNEL2) || \
+      defined(WOLFSSL_LPC43xx)  || defined(WOLFSSL_STM32F2xx) || \
+      defined(MBED)             || defined(WOLFSSL_EMBOS) || \
+      defined(WOLFSSL_GENSEED_FORTEST) || defined(WOLFSSL_CHIBIOS) || \
+      defined(WOLFSSL_CONTIKI)  || defined(WOLFSSL_AZSPHERE)
+
+    /* these platforms do not have a default random seed and
+       you'll need to implement your own wc_GenerateSeed or define via
+       CUSTOM_RAND_GENERATE_BLOCK */
+
+    #define USE_TEST_GENSEED
+
 #elif defined(NO_DEV_RANDOM)
 
     #error "you need to write an os specific wc_GenerateSeed() here"
@@ -1054,11 +1080,7 @@ static int wc_RNG_HealthTestLocal(int reseed)
 #endif
 
 #ifdef USE_TEST_GENSEED
-    #ifndef _MSC_VER
-        #warning "write a real random seed!!!!, just for testing now"
-    #else
-        #pragma message("Warning: write a real random seed!!!!, just for testing now")
-    #endif
+
     int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
     {
         word32 i;

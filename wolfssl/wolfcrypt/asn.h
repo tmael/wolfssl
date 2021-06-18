@@ -140,6 +140,7 @@ enum DN_Tags {
     /* pilot attribute types
      * OID values of 0.9.2342.19200300.100.1.* */
     ASN_USER_ID          = 0x01, /* UID */
+    ASN_FAVOURITE_DRINK  = 0x05, /* favouriteDrink */
     ASN_DOMAIN_COMPONENT = 0x19  /* DC */
 };
 
@@ -182,6 +183,7 @@ extern const WOLFSSL_ObjectInfo wolfssl_object_info[];
 
 #define WOLFSSL_USER_ID          "/UID="
 #define WOLFSSL_DOMAIN_COMPONENT "/DC="
+#define WOLFSSL_FAVOURITE_DRINK  "/favouriteDrink="
 
 #if defined(WOLFSSL_APACHE_HTTPD)
     /* otherName strings */

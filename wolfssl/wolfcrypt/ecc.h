@@ -548,6 +548,15 @@ int wc_ecc_mulmod_ex2(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
                       void* heap);
 #endif /* !WOLFSSL_ATECC508A */
 
+#ifdef HAVE_ECC_KEY_EXPORT
+/* ASN key helpers */
+WOLFSSL_API
+int wc_ecc_export_x963(ecc_key*, byte* out, word32* outLen);
+WOLFSSL_API
+int wc_ecc_export_x963_ex(ecc_key*, byte* out, word32* outLen, int compressed);
+    /* extended functionality with compressed option */
+#endif /* HAVE_ECC_KEY_EXPORT */
+
 #ifdef HAVE_ECC_KEY_IMPORT
 WOLFSSL_ABI WOLFSSL_API
 int wc_ecc_import_x963(const byte* in, word32 inLen, ecc_key* key);
@@ -577,8 +586,34 @@ int wc_ecc_import_raw_ex(ecc_key* key, const char* qx, const char* qy,
 WOLFSSL_API
 int wc_ecc_import_unsigned(ecc_key* key, byte* qx, byte* qy,
                    byte* d, int curve_id);
-#endif /* HAVE_ECC_KEY_IMPORT */
 
+#endif /* HAVE_ECC_KEY_IMPORT */
+#ifdef HAVE_ECC_KEY_EXPORT
+WOLFSSL_API
+int wc_ecc_export_ex(ecc_key* key, byte* qx, word32* qxLen,
+                     byte* qy, word32* qyLen, byte* d, word32* dLen,
+                     int encType);
+WOLFSSL_API
+int wc_ecc_export_private_only(ecc_key* key, byte* out, word32* outLen);
+WOLFSSL_API
+int wc_ecc_export_public_raw(ecc_key* key, byte* qx, word32* qxLen,
+                             byte* qy, word32* qyLen);
+WOLFSSL_API
+int wc_ecc_export_private_raw(ecc_key* key, byte* qx, word32* qxLen,
+                              byte* qy, word32* qyLen, byte* d, word32* dLen);
+#endif /* HAVE_ECC_KEY_EXPORT */
+
+#ifdef HAVE_ECC_KEY_EXPORT
+WOLFSSL_API
+int wc_ecc_export_point_der_ex(const int curve_idx, ecc_point* point, byte* out,
+                               word32* outLen, int compressed);
+WOLFSSL_API
+int wc_ecc_export_point_der(const int curve_idx, ecc_point* point,
+                            byte* out, word32* outLen);
+WOLFSSL_LOCAL
+int wc_ecc_export_point_der_compressed(const int curve_idx, ecc_point* point,
+                                       byte* out, word32* outLen);
+#endif /* HAVE_ECC_KEY_EXPORT */
 
 #ifdef HAVE_ECC_KEY_IMPORT
 WOLFSSL_API
