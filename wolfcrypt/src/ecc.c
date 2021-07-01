@@ -465,27 +465,6 @@ int wc_ecc_mulmod(mp_int* k, ecc_point *G, ecc_point *R, mp_int* a,
     return wc_ecc_mulmod_ex(k, G, R, a, modulus, map, NULL);
 }
 
-void wc_ecc_del_point_h(ecc_point* p, void* heap)
-{
-   /* prevents free'ing null arguments */
-   if (p != NULL) {
-      mp_clear(p->x);
-      mp_clear(p->y);
-      mp_clear(p->z);
-      XFREE(p, heap, DYNAMIC_TYPE_ECC);
-   }
-   (void)heap;
-}
-
-
-/** Free an ECC point from memory
-  p   The point to free
-*/
-void wc_ecc_del_point(ecc_point* p)
-{
-    wc_ecc_del_point_h(p, NULL);
-}
-
 
 /** Copy the value of a point to an other one
   p    The point to copy
@@ -1055,13 +1034,21 @@ int wc_ecc_point_is_on_curve(ecc_point *p, int curve_idx)
 }
 #endif /* USE_ECC_B_PARAM */
 
+// int get_digit_count(mp_int* a)
+// {
+//     if (a == NULL)
+//         return 0;
+
+//     return a->used;
+// }
+
 /* return 1 if point is at infinity, 0 if not, < 0 on error */
 int wc_ecc_point_is_at_infinity(ecc_point* p)
 {
     if (p == NULL)
         return BAD_FUNC_ARG;
 
-    if (get_digit_count(p->x) == 0 && get_digit_count(p->y) == 0)
+    if (p->x->used && p->y->used)
         return 1;
 
     return 0;
@@ -1289,15 +1276,35 @@ int wc_ecc_make_key_ex(WC_RNG* rng, int keysize, ecc_key* key, int curve_id)
     return wc_ecc_make_key_ex2(rng, keysize, key, curve_id, WC_ECC_FLAG_NONE);
 }
 
+#ifndef WOLFSSL_DO178_MAX_ECC_KEY
+    #define WOLFSSL_DO178_MAX_ECC_KEY 4
+#endif
+static byte ecc_key_buffer[WOLFSSL_DO178_MAX_ECC_KEY][sizeof(ecc_key)];
+static int ecc_key_in_use[WOLFSSL_DO178_MAX_ECC_KEY] = {0};
+
 WOLFSSL_ABI
 ecc_key* wc_ecc_key_new(void* heap)
 {
-    ecc_key* key;
-
+    ecc_key* key = NULL;
+    int i;
+#ifndef WOLFSSL_NO_MALLOC
     key = (ecc_key*)XMALLOC(sizeof(ecc_key), heap, DYNAMIC_TYPE_ECC);
+#else
+    for (i = 0; i < WOLFSSL_DO178_MAX_ECC_KEY; i++) {
+        if (ecc_key_in_use[i] == 0) {
+            ecc_key_in_use[i]++;
+            key = (ecc_key*)ecc_key_buffer[i];
+            break;
+        }
+    }
+#endif
     if (key) {
         if (wc_ecc_init_ex(key, heap, INVALID_DEVID) != 0) {
+#ifndef WOLFSSL_NO_MALLOC
             XFREE(key, heap, DYNAMIC_TYPE_ECC);
+#else
+		    ecc_key_in_use[i] = 0;
+#endif
             key = NULL;
         }
     }
@@ -1314,8 +1321,17 @@ void wc_ecc_key_free(ecc_key* key)
 
         wc_ecc_free(key);
         ForceZero(key, sizeof(ecc_key));
+#ifndef WOLFSSL_NO_MALLOC
         XFREE(key, heap, DYNAMIC_TYPE_ECC);
-        (void)heap;
+#else
+    for (int i = 0; i < WOLFSSL_DO178_MAX_ECC_KEY; i++) {
+        if (key == (ecc_key*)ecc_key_buffer[i]) {
+            ecc_key_in_use[i] = 0;
+            return;
+        }
+    }
+#endif
+    (void)heap;
     }
 }
 
@@ -2450,6 +2466,42 @@ int wc_ecc_get_oid(word32 oidSum, const byte** oid, word32* oidSz)
 
     return NOT_COMPILED_IN;
 }
+#if defined(HAVE_ECC) || defined(WOLFSSL_EXPORT_INT)
+/* export an mp_int as unsigned char or hex string
+ * encType is WC_TYPE_UNSIGNED_BIN or WC_TYPE_HEX_STR
+ * return MP_OKAY on success */
+int wc_export_int(mp_int* mp, byte* buf, word32* len, word32 keySz,
+    int encType)
+{
+    int err;
+
+    if (mp == NULL)
+        return BAD_FUNC_ARG;
+
+    /* check buffer size */
+    if (*len < keySz) {
+        *len = keySz;
+        return BUFFER_E;
+    }
+
+    *len = keySz;
+    XMEMSET(buf, 0, *len);
+
+    if (encType == WC_TYPE_HEX_STR) {
+    #ifdef WC_MP_TO_RADIX
+        err = mp_tohex(mp, (char*)buf);
+    #else
+        err = NOT_COMPILED_IN;
+    #endif
+    }
+    else {
+        err = mp_to_unsigned_bin(mp, buf + (keySz - mp_unsigned_bin_size(mp)));
+    }
+
+    return err;
+}
+#endif
+
 #ifdef HAVE_ECC_KEY_EXPORT
 /* export ecc key to component form, d is optional if only exporting public
  * encType is WC_TYPE_UNSIGNED_BIN or WC_TYPE_HEX_STR
@@ -2475,36 +2527,12 @@ int wc_ecc_export_ex(ecc_key* key, byte* qx, word32* qxLen,
             (key->type != ECC_PRIVATEKEY && key->type != ECC_PRIVATEKEY_ONLY))
             return BAD_FUNC_ARG;
 
-    #if defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A)
-        /* Hardware cannot export private portion */
-        return NOT_COMPILED_IN;
-    #else
-    #ifdef WOLFSSL_QNX_CAAM
-        if (encType == WC_TYPE_BLACK_KEY) {
-            if (key->blackKey > 0) {
-                if (*dLen < keySz + WC_CAAM_MAC_SZ) {
-                    *dLen = keySz + WC_CAAM_MAC_SZ;
-                    return BUFFER_E;
-                }
-
-                if (caamReadPartition(key->blackKey, d, keySz + WC_CAAM_MAC_SZ) != 0)
-                    return WC_HW_E;
-
-                *dLen = keySz + WC_CAAM_MAC_SZ;
-            }
-            else {
-                WOLFSSL_MSG("No black key stored in structure");
-                return BAD_FUNC_ARG;
-            }
-        }
-        else
-        #endif
         {
             err = wc_export_int(&key->k, d, dLen, keySz, encType);
             if (err != MP_OKAY)
                 return err;
         }
-    #endif
+
     }
 
     /* public x component */
@@ -2538,14 +2566,6 @@ int wc_ecc_export_private_only(ecc_key* key, byte* out, word32* outLen)
     if (out == NULL || outLen == NULL) {
         return BAD_FUNC_ARG;
     }
-
-#ifdef WOLFSSL_QNX_CAAM
-    /* check if black key in secure memory */
-    if (key->blackKey > 0) {
-        return wc_ecc_export_ex(key, NULL, NULL, NULL, NULL, out, outLen,
-            WC_TYPE_BLACK_KEY);
-    }
-#endif
 
     return wc_ecc_export_ex(key, NULL, NULL, NULL, NULL, out, outLen,
         WC_TYPE_UNSIGNED_BIN);
@@ -2744,22 +2764,6 @@ int wc_ecc_export_x963(ecc_key* key, byte* out, word32* outLen)
 
    if (key->type == ECC_PRIVATEKEY_ONLY)
        return ECC_PRIVATEONLY_E;
-
-#ifdef WOLFSSL_QNX_CAAM
-    /* check if public key in secure memory */
-    if (key->securePubKey > 0) {
-        int keySz = wc_ecc_size(key);
-
-        /* store byte point type */
-        out[0] = ECC_POINT_UNCOMP;
-
-        if (caamReadPartition((CAAM_ADDRESS)key->securePubKey, out+1, keySz*2) != 0)
-            return WC_HW_E;
-
-        *outLen = 1 + 2*keySz;
-        return MP_OKAY;
-    }
-#endif
 
    if (key->type == 0 || wc_ecc_is_valid_idx(key->idx) == 0 || key->dp == NULL){
        return ECC_BAD_ARG_E;

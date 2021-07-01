@@ -172,9 +172,16 @@ enum Ctc_Misc {
 #endif /* WOLFSSL_CERT_EXT */
 };
 
+#ifndef WOLFSSL_DO178_MAX_DER_SIZE
+	#define WOLFSSL_DO178_MAX_DER_SIZE 1024
+#endif 
 /* DER buffer */
 typedef struct DerBuffer {
+#if defined(WOLFSSL_NO_MALLOC)
+    byte buffer[WOLFSSL_DO178_MAX_DER_SIZE];
+#else
     byte*  buffer;
+#endif
     void*  heap;
     word32 length;
     int    type;    /* enum CertType */

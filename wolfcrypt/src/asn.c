@@ -40,6 +40,14 @@ ASN Options:
 
 #ifndef NO_ASN
 
+#ifdef HAVE_DO178
+#undef WOLFSSL_ENTER
+#undef WOLFSSL_LEAVE
+
+#define WOLFSSL_ENTER(m)
+#define WOLFSSL_LEAVE(m, r)
+#endif
+
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/hmac.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
@@ -68,132 +76,37 @@ ASN Options:
 
 #include <wolfssl/internal.h>
 #include <wolfssl/ssl.h>
+#include <wolfssl/error-ssl.h>
 
-/* hashType */
-#ifdef WOLFSSL_MD2
-    static const byte hashMd2hOid[] = {42, 134, 72, 134, 247, 13, 2, 2};
-#endif
-#ifndef NO_MD5
-    static const byte hashMd5hOid[] = {42, 134, 72, 134, 247, 13, 2, 5};
-#endif
-#ifndef NO_SHA
-    static const byte hashSha1hOid[] = {43, 14, 3, 2, 26};
-#endif
-#ifdef WOLFSSL_SHA224
-    static const byte hashSha224hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 4};
-#endif
 #ifndef NO_SHA256
     static const byte hashSha256hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 1};
 #endif
 #ifdef WOLFSSL_SHA384
     static const byte hashSha384hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 2};
 #endif
-#ifdef WOLFSSL_SHA512
-    static const byte hashSha512hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 3};
-#endif
-#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_224)
-    static const byte hashSha3_224hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 7};
-#endif
-#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_256)
-    static const byte hashSha3_256hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 8};
-#endif
-#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_384)
-    static const byte hashSha3_384hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 9};
-#endif
-#if defined(WOLFSSL_SHA3) && !defined(WOLFSSL_NOSHA3_512)
-    static const byte hashSha3_512hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 10};
-#endif
 
 /* hmacType */
 #ifndef NO_HMAC
-    #ifdef WOLFSSL_SHA224
-    static const byte hmacSha224Oid[] = {42, 134, 72, 134, 247, 13, 2, 8};
-    #endif
     #ifndef NO_SHA256
     static const byte hmacSha256Oid[] = {42, 134, 72, 134, 247, 13, 2, 9};
     #endif
     #ifdef WOLFSSL_SHA384
     static const byte hmacSha384Oid[] = {42, 134, 72, 134, 247, 13, 2, 10};
     #endif
-    #ifdef WOLFSSL_SHA512
-    static const byte hmacSha512Oid[] = {42, 134, 72, 134, 247, 13, 2, 11};
-    #endif
 #endif
 
-/* sigType */
-#if !defined(NO_DSA) && !defined(NO_SHA)
-    static const byte sigSha1wDsaOid[] = {42, 134, 72, 206, 56, 4, 3};
-    static const byte sigSha256wDsaOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 2};
-#endif /* NO_DSA */
-#ifndef NO_RSA
-    #ifdef WOLFSSL_MD2
-    static const byte sigMd2wRsaOid[] = {42, 134, 72, 134, 247, 13, 1, 1, 2};
-    #endif
-    #ifndef NO_MD5
-    static const byte sigMd5wRsaOid[] = {42, 134, 72, 134, 247, 13, 1, 1, 4};
-    #endif
-    #ifndef NO_SHA
-    static const byte sigSha1wRsaOid[] = {42, 134, 72, 134, 247, 13, 1, 1, 5};
-    #endif
-    #ifdef WOLFSSL_SHA224
-    static const byte sigSha224wRsaOid[] = {42, 134, 72, 134, 247, 13, 1, 1,14};
-    #endif
-    #ifndef NO_SHA256
-    static const byte sigSha256wRsaOid[] = {42, 134, 72, 134, 247, 13, 1, 1,11};
-    #endif
-    #ifdef WOLFSSL_SHA384
-    static const byte sigSha384wRsaOid[] = {42, 134, 72, 134, 247, 13, 1, 1,12};
-    #endif
-    #ifdef WOLFSSL_SHA512
-    static const byte sigSha512wRsaOid[] = {42, 134, 72, 134, 247, 13, 1, 1,13};
-    #endif
-#endif /* NO_RSA */
 #ifdef HAVE_ECC
-    #ifndef NO_SHA
-    static const byte sigSha1wEcdsaOid[] = {42, 134, 72, 206, 61, 4, 1};
-    #endif
-    #ifdef WOLFSSL_SHA224
-    static const byte sigSha224wEcdsaOid[] = {42, 134, 72, 206, 61, 4, 3, 1};
-    #endif
     #ifndef NO_SHA256
     static const byte sigSha256wEcdsaOid[] = {42, 134, 72, 206, 61, 4, 3, 2};
     #endif
     #ifdef WOLFSSL_SHA384
     static const byte sigSha384wEcdsaOid[] = {42, 134, 72, 206, 61, 4, 3, 3};
     #endif
-    #ifdef WOLFSSL_SHA512
-    static const byte sigSha512wEcdsaOid[] = {42, 134, 72, 206, 61, 4, 3, 4};
-    #endif
 #endif /* HAVE_ECC */
-#ifdef HAVE_ED25519
-    static const byte sigEd25519Oid[] = {43, 101, 112};
-#endif /* HAVE_ED25519 */
-#ifdef HAVE_ED448
-    static const byte sigEd448Oid[] = {43, 101, 113};
-#endif /* HAVE_ED448 */
 
-/* keyType */
-#ifndef NO_DSA
-    static const byte keyDsaOid[] = {42, 134, 72, 206, 56, 4, 1};
-#endif /* NO_DSA */
-#ifndef NO_RSA
-    static const byte keyRsaOid[] = {42, 134, 72, 134, 247, 13, 1, 1, 1};
-#endif /* NO_RSA */
-#ifdef HAVE_NTRU
-    static const byte keyNtruOid[] = {43, 6, 1, 4, 1, 193, 22, 1, 1, 1, 1};
-#endif /* HAVE_NTRU */
 #ifdef HAVE_ECC
     static const byte keyEcdsaOid[] = {42, 134, 72, 206, 61, 2, 1};
 #endif /* HAVE_ECC */
-#ifdef HAVE_ED25519
-    static const byte keyEd25519Oid[] = {43, 101, 112};
-#endif /* HAVE_ED25519 */
-#ifdef HAVE_ED448
-    static const byte keyEd448Oid[] = {43, 101, 113};
-#endif /* HAVE_ED448 */
-#ifndef NO_DH
-    static const byte keyDhOid[] = {42, 134, 72, 134, 247, 13, 1, 3, 1};
-#endif /* !NO_DH */
 
 #define ERROR_OUT(err, eLabel) { ret = (err); goto eLabel; }
 /* curveType */
@@ -224,23 +137,6 @@ ASN Options:
     static const byte blkAes256GcmOid[] = {96, 134, 72, 1, 101, 3, 4, 1, 46};
     #endif
 #endif /* HAVE_AESGCM */
-#ifdef HAVE_AESCCM
-    #ifdef WOLFSSL_AES_128
-    static const byte blkAes128CcmOid[] = {96, 134, 72, 1, 101, 3, 4, 1, 7};
-    #endif
-    #ifdef WOLFSSL_AES_192
-    static const byte blkAes192CcmOid[] = {96, 134, 72, 1, 101, 3, 4, 1, 27};
-    #endif
-    #ifdef WOLFSSL_AES_256
-    static const byte blkAes256CcmOid[] = {96, 134, 72, 1, 101, 3, 4, 1, 47};
-    #endif
-#endif /* HAVE_AESCCM */
-
-#ifndef NO_DES3
-    static const byte blkDesCbcOid[]  = {43, 14, 3, 2, 7};
-    static const byte blkDes3CbcOid[] = {42, 134, 72, 134, 247, 13, 3, 7};
-#endif
-
 /* keyWrapType */
 #ifdef WOLFSSL_AES_128
     static const byte wrapAes128Oid[] = {96, 134, 72, 1, 101, 3, 4, 1, 5};
@@ -251,35 +147,13 @@ ASN Options:
 #ifdef WOLFSSL_AES_256
     static const byte wrapAes256Oid[] = {96, 134, 72, 1, 101, 3, 4, 1, 45};
 #endif
-#ifdef HAVE_PKCS7
-/* From RFC 3211 */
-static const byte wrapPwriKekOid[] = {42, 134, 72, 134, 247, 13, 1, 9, 16, 3,9};
-#endif
-
 /* cmsKeyAgreeType */
-#ifndef NO_SHA
-    static const byte dhSinglePass_stdDH_sha1kdf_Oid[]   =
-                                          {43, 129, 5, 16, 134, 72, 63, 0, 2};
-#endif
-#ifdef WOLFSSL_SHA224
-    static const byte dhSinglePass_stdDH_sha224kdf_Oid[] = {43, 129, 4, 1, 11, 0};
-#endif
 #ifndef NO_SHA256
     static const byte dhSinglePass_stdDH_sha256kdf_Oid[] = {43, 129, 4, 1, 11, 1};
 #endif
 #ifdef WOLFSSL_SHA384
     static const byte dhSinglePass_stdDH_sha384kdf_Oid[] = {43, 129, 4, 1, 11, 2};
 #endif
-#ifdef WOLFSSL_SHA512
-    static const byte dhSinglePass_stdDH_sha512kdf_Oid[] = {43, 129, 4, 1, 11, 3};
-#endif
-
-/* ocspType */
-#ifdef HAVE_OCSP
-    static const byte ocspBasicOid[]    = {43, 6, 1, 5, 5, 7, 48, 1, 1};
-    static const byte ocspNonceOid[]    = {43, 6, 1, 5, 5, 7, 48, 1, 2};
-    static const byte ocspNoCheckOid[]  = {43, 6, 1, 5, 5, 7, 48, 1, 5};
-#endif /* HAVE_OCSP */
 
 /* certExtType */
 static const byte extBasicCaOid[] = {85, 29, 19};
@@ -293,9 +167,6 @@ static const byte extKeyUsageOid[] = {85, 29, 15};
 static const byte extInhibitAnyOid[] = {85, 29, 54};
 static const byte extExtKeyUsageOid[] = {85, 29, 37};
 /* certAuthInfoType */
-#ifdef HAVE_OCSP
-    static const byte extAuthInfoOcspOid[] = {43, 6, 1, 5, 5, 7, 48, 1};
-#endif
 static const byte extAuthInfoCaIssuerOid[] = {43, 6, 1, 5, 5, 7, 48, 2};
 
 /* certPolicyType */
@@ -313,19 +184,10 @@ static const byte extExtKeyUsageEmailProtectOid[] = {43, 6, 1, 5, 5, 7, 3, 4};
 static const byte extExtKeyUsageTimestampOid[]    = {43, 6, 1, 5, 5, 7, 3, 8};
 static const byte extExtKeyUsageOcspSignOid[]     = {43, 6, 1, 5, 5, 7, 3, 9};
 
-#ifdef WOLFSSL_CERT_REQ
-/* csrAttrType */
-static const byte attrChallengePasswordOid[] = {42, 134, 72, 134, 247, 13, 1, 9, 7};
-static const byte attrSerialNumberOid[] = {85, 4, 5};
-#endif
-
 /* kdfType */
 static const byte pbkdf2Oid[] = {42, 134, 72, 134, 247, 13, 1, 5, 12};
 
 /* PKCS5 */
-#if !defined(NO_DES3) && !defined(NO_SHA)
-static const byte pbeSha1Des[] = {42, 134, 72, 134, 247, 13, 1, 5, 10};
-#endif
 static const byte pbes2[] = {42, 134, 72, 134, 247, 13, 1, 5, 13};
 
 int GetLength(const byte* input, word32* inOutIdx, int* len,
@@ -1471,20 +1333,58 @@ int wc_EccPublicKeyDecode(const byte* input, word32* inOutIdx,
 #ifndef CA_TABLE_SIZE
     #define CA_TABLE_SIZE 11
 #endif
+#if !defined(NO_SHA256)
+static int wc_Sha256Hash_(const byte* data, word32 len, byte* hash)
+    {
+        int ret = 0;
+        wc_Sha256 sha256[1];
+        int devId = INVALID_DEVID;
+
+        if ((ret = wc_InitSha256_ex(sha256, NULL, devId)) != 0) {
+            WOLFSSL_MSG("InitSha256 failed");
+        }
+        else {
+            if ((ret = wc_Sha256Update(sha256, data, len)) != 0) {
+                WOLFSSL_MSG("Sha256Update failed");
+            }
+            else if ((ret = wc_Sha256Final(sha256, hash)) != 0) {
+                WOLFSSL_MSG("Sha256Final failed");
+            }
+            wc_Sha256Free(sha256);
+        }
+        return ret;
+    }
+#endif /* !NO_SHA256 */
+#if defined(WOLFSSL_SHA384)
+static int wc_Sha384Hash_(const byte* data, word32 len, byte* hash)
+    {
+        int ret = 0;
+        wc_Sha384 sha384[1];
+
+        if ((ret = wc_InitSha384(sha384)) != 0) {
+            WOLFSSL_MSG("InitSha384 failed");
+        }
+        else {
+            if ((ret = wc_Sha384Update(sha384, data, len)) != 0) {
+                WOLFSSL_MSG("Sha384Update failed");
+            }
+            else if ((ret = wc_Sha384Final(sha384, hash)) != 0) {
+                WOLFSSL_MSG("Sha384Final failed");
+            }
+            wc_Sha384Free(sha384);
+        }
+
+        return ret;
+    }
+#endif /* WOLFSSL_SHA384 */
 /* Routine for calculating hashId */
 int CalcHashId(const byte* data, word32 len, byte* hash)
 {
-    int ret;
+    int ret = NOT_COMPILED_IN;
 
 #if defined(NO_SHA) && !defined(NO_SHA256)
-    ret = wc_Sha256Hash(data, len, hash);
-#else
-    ret = NOT_COMPILED_IN;
-    (void)data;
-    (void)len;
-    (void)hash;
+    ret = wc_Sha256Hash_(data, len, hash);
 #endif
-
     return ret;
 }
 static int GetHeader(const byte* input, byte* tag, word32* inOutIdx, int* len,
@@ -1608,9 +1508,16 @@ int GetName(DecodedCert* cert, int nameType, int maxIdx)
 
             if (id == ASN_COMMON_NAME) {
                 if (nameType == SUBJECT) {
-                    cert->subjectCN = (char *)&cert->source[cert->srcIdx];
                     cert->subjectCNLen = strLen;
                     cert->subjectCNEnc = b;
+#ifndef WOLFSSL_NO_MALLOC                       
+                    cert->subjectCN = (char *)&cert->source[cert->srcIdx];
+#else
+                    XMEMCPY(cert->subjectCN, &cert->source[cert->srcIdx], strLen);
+                    cert->subjectCN[strLen] = '\0';
+                    cert->subjectCNStored = 1;
+#endif   
+
                 }
 
                 copy = WOLFSSL_COMMON_NAME;
@@ -1844,6 +1751,35 @@ static int GetExplicitVersion(const byte* input, word32* inOutIdx, int* version,
 
     return 0;
 }
+void FreeDecodedCert(DecodedCert* cert)
+{
+    if (cert == NULL)
+        return;
+
+
+//    if (cert->subjectCNStored == 1) {
+//        XMEMSET(&cert->subjectCN, 0, sizeof(cert->subjectCN));
+//        cert->subjectCNStored = 0;
+//    }
+//    if (cert->pubKeyStored == 1) {
+//        XMEMSET(&cert->publicKey, 0, sizeof(cert->publicKey));
+//        cert->pubKeyStored = 1;
+//    }
+#ifndef IGNORE_NAME_CONSTRAINTS
+    if (cert->altEmailNames)
+        FreeAltNames(cert->altEmailNames, cert->heap);
+    if (cert->altDirNames)
+        FreeAltNames(cert->altDirNames, cert->heap);
+    if (cert->permittedNames)
+        FreeNameSubtrees(cert->permittedNames, cert->heap);
+    if (cert->excludedNames)
+        FreeNameSubtrees(cert->excludedNames, cert->heap);
+#endif /* IGNORE_NAME_CONSTRAINTS */
+
+#ifndef NO_CERTS
+    FreeSignatureCtx(&cert->sigCtx);
+#endif
+}
 
 static int GetCertHeader(DecodedCert* cert)
 {
@@ -2001,7 +1937,6 @@ static int GetKey(DecodedCert* cert)
             byte seq[5];
             int pubLen = length + 1 + SetLength(length, seq);
             word32 localIdx;
-            byte* publicKey;
             byte  tag;
 
             localIdx = cert->srcIdx;
@@ -2022,14 +1957,8 @@ static int GetKey(DecodedCert* cert)
                 if (ret != 0)
                     return ret;
             }
-
-            publicKey = (byte*)XMALLOC(pubLen, cert->heap,
-                                       DYNAMIC_TYPE_PUBLIC_KEY);
-            if (publicKey == NULL)
-                return MEMORY_E;
-            XMEMCPY(publicKey, &cert->source[tmpIdx], pubLen);
-            cert->publicKey = publicKey;
-            cert->pubKeyStored = 1;
+            XMEMCPY(&cert->publicKey, &cert->source[tmpIdx], pubLen);
+            cert->pubKeyStored = 1;            
             cert->pubKeySize   = pubLen;
 
             cert->srcIdx = tmpIdx + pubLen;
@@ -2066,15 +1995,21 @@ int DecodeToKey(DecodedCert* cert, int verify)
     return ret;
 }
 
+
 int wc_GetCTC_HashOID(int type)
 {
-    int ret;
-    enum wc_HashType hType;
+    int ret = 0;
+#ifndef NO_SHA256
+    if (type == WC_SHA256) {
+        ret = SHA256h;
+    }
+#endif
 
-    hType = wc_HashTypeConvert(type);
-    ret = wc_HashGetOID(hType);
-    if (ret < 0)
-        ret = 0; /* backwards compatibility */
+#ifdef WOLFSSL_SHA384
+    if (type == WC_SHA384) {
+        ret = SHA384h;
+    }
+#endif /* WOLFSSL_SHA384 */
 
     return ret;
 }
@@ -2108,6 +2043,249 @@ static WC_INLINE word32 HashSigner(const byte* hash)
     return MakeWordFromHash(hash) % CA_TABLE_SIZE;
 }
 
+#ifndef WOLFSSL_DO178_MAX_SIGNERS
+    #define WOLFSSL_DO178_MAX_SIGNERS 4
+#endif
+static byte signer_buffer[WOLFSSL_DO178_MAX_SIGNERS][sizeof(Signer)];
+static int signer_in_use[WOLFSSL_DO178_MAX_SIGNERS] = {0};
+
+/* Create and init an new signer */
+Signer* MakeSigner(void* heap)
+{
+#ifndef WOLFSSL_NO_MALLOC
+    Signer* signer = (Signer*) XMALLOC(sizeof(Signer), heap,
+                                       DYNAMIC_TYPE_SIGNER);
+    if (signer) {
+        XMEMSET(signer, 0, sizeof(Signer));
+    }
+    (void)heap;
+    return signer;
+
+#else
+    int i;
+    (void)heap;
+    for (i = 0; i < WOLFSSL_DO178_MAX_SIGNERS; i++) {
+        if (signer_in_use[i] == 0) {
+            signer_in_use[i]++;
+            return (Signer*)signer_buffer[i];
+        }
+    }
+    return NULL;
+#endif
+
+}
+/* Free an individual signer */
+void FreeSigner(Signer* signer, void* heap)
+{
+    (void)signer;
+    (void)heap;
+
+    for (int i = 0; i < WOLFSSL_DO178_MAX_SIGNERS; i++) {
+        if (signer == (Signer*)signer_buffer[i]) {
+            signer_in_use[i] = 0;
+            return;
+        }
+    }
+}
+/* does CA already exist on signer list */
+int AlreadySigner(WOLFSSL_CERT_MANAGER* cm, byte* hash)
+{
+    Signer* signers;
+    int     ret = 0;
+    word32  row;
+
+    if (cm == NULL || hash == NULL) {
+        return ret;
+    }
+
+    row = HashSigner(hash);
+#ifndef SINGLE_THREADED
+    if (wc_LockMutex(&cm->caLock) != 0) {
+        return ret;
+    }
+#endif
+    signers = cm->caTable[row];
+    while (signers) {
+        byte* subjectHash;
+
+    #ifndef NO_SKID
+        subjectHash = signers->subjectKeyIdHash;
+    #else
+        subjectHash = signers->subjectNameHash;
+    #endif
+
+        if (XMEMCMP(hash, subjectHash, SIGNER_DIGEST_SIZE) == 0) {
+            ret = 1; /* success */
+            break;
+        }
+        signers = signers->next;
+    }
+#ifndef SINGLE_THREADED
+    wc_UnLockMutex(&cm->caLock);
+#endif
+    return ret;
+}
+void FreeDer(DerBuffer** pDer)
+{
+    if (pDer && *pDer)
+    {
+        DerBuffer* der = (DerBuffer*)*pDer;
+
+        /* ForceZero private keys */
+        if (der->type == PRIVATEKEY_TYPE) {
+            ForceZero(der->buffer, der->length);
+        }
+#ifndef WOLFSSL_NO_MALLOC
+        der->buffer = NULL;
+#endif
+        XMEMSET(der, 0, der->length);
+        der->length = 0;
+    }
+}
+
+/* owns der, internal now uses too */
+/* type flag ids from user or from chain received during verify
+   don't allow chain ones to be added w/o isCA extension */
+int AddCA(WOLFSSL_CERT_MANAGER* cm, DerBuffer** pDer, int type, int verify)
+{
+    int         ret;
+    Signer*     signer = NULL;
+    word32      row;
+    byte*       subjectHash;
+    DecodedCert  cert[1];
+
+    DerBuffer*   der = *pDer;
+
+    WOLFSSL_MSG("Adding a CA");
+
+    if (cm == NULL) {
+        FreeDer(pDer);
+        return BAD_FUNC_ARG;
+    }
+
+    InitDecodedCert(cert, der->buffer, der->length, cm->heap);
+    ret = ParseCert(cert, CA_TYPE, verify, cm);
+    WOLFSSL_MSG("\tParsed new CA");
+
+#ifndef NO_SKID
+    subjectHash = cert->extSubjKeyId;
+#else
+    subjectHash = cert->subjectHash;
+#endif
+
+    /* check CA key size */
+    if (verify) {
+        switch (cert->keyOID) {
+            #ifdef HAVE_ECC
+            case ECDSAk:
+                if (cm->minEccKeySz < 0 ||
+                                   cert->pubKeySize < (word16)cm->minEccKeySz) {
+                    ret = ECC_KEY_SIZE_E;
+                    WOLFSSL_MSG("\tCA ECC key size error");
+                }
+                break;
+            #endif /* HAVE_ECC */
+            default:
+                WOLFSSL_MSG("\tNo key size check done on CA");
+                break; /* no size check if key type is not in switch */
+        }
+    }
+
+    if (ret == 0 && cert->isCA == 0 && type != WOLFSSL_USER_CA) {
+        WOLFSSL_MSG("\tCan't add as CA if not actually one");
+        ret = NOT_CA_ERROR;
+    }
+#ifndef ALLOW_INVALID_CERTSIGN
+    else if (ret == 0 && cert->isCA == 1 && type != WOLFSSL_USER_CA &&
+        !cert->selfSigned && (cert->extKeyUsage & KEYUSE_KEY_CERT_SIGN) == 0) {
+        /* Intermediate CA certs are required to have the keyCertSign
+        * extension set. User loaded root certs are not. */
+        WOLFSSL_MSG("\tDoesn't have key usage certificate signing");
+        ret = NOT_CA_ERROR;
+    }
+#endif
+    else if (ret == 0 && AlreadySigner(cm, subjectHash)) {
+        WOLFSSL_MSG("\tAlready have this CA, not adding again");
+        (void)ret;
+    }
+    else if (ret == 0) {
+        /* take over signer parts */
+        signer = MakeSigner(cm->heap);
+        if (!signer)
+            ret = MEMORY_ERROR;
+    }
+    if (ret == 0 && signer != NULL) {
+    #ifdef WOLFSSL_SIGNER_DER_CERT
+        ret = AllocDer(&signer->derCert, der->length, der->type, NULL);
+    }
+    if (ret == 0 && signer != NULL) {
+        XMEMCPY(signer->derCert->buffer, der->buffer, der->length);
+    #endif
+        signer->keyOID         = cert->keyOID;
+        if (cert->pubKeyStored) {
+            signer->publicKey      = cert->publicKey;
+            signer->pubKeySize     = cert->pubKeySize;
+        }
+        if (cert->subjectCNStored) {
+            signer->nameLen        = cert->subjectCNLen;
+            signer->name           = cert->subjectCN;
+        }
+        signer->pathLength     = cert->pathLength;
+        signer->maxPathLen     = cert->maxPathLen;
+        signer->pathLengthSet  = cert->pathLengthSet;
+        signer->selfSigned     = cert->selfSigned;
+    #ifndef IGNORE_NAME_CONSTRAINTS
+        signer->permittedNames = cert->permittedNames;
+        signer->excludedNames  = cert->excludedNames;
+    #endif
+        XMEMCPY(signer->subjectNameHash, cert->subjectHash,
+                SIGNER_DIGEST_SIZE);
+
+        signer->keyUsage = cert->extKeyUsageSet ? cert->extKeyUsage
+                                                : 0xFFFF;
+        signer->next    = NULL; /* If Key Usage not set, all uses valid. */
+
+    #ifndef IGNORE_NAME_CONSTRAINTS
+        cert->permittedNames = NULL;
+        cert->excludedNames = NULL;
+    #endif
+
+    #ifndef NO_SKID
+        row = HashSigner(signer->subjectKeyIdHash);
+    #else
+        row = HashSigner(signer->subjectNameHash);
+    #endif
+#ifndef SINGLE_THREADED
+        if (wc_LockMutex(&cm->caLock) == 0) {
+#endif
+            signer->next = cm->caTable[row];
+            cm->caTable[row] = signer;   /* takes ownership */
+#ifndef SINGLE_THREADED
+            wc_UnLockMutex(&cm->caLock);
+#endif
+            if (cm->caCacheCallback)
+                cm->caCacheCallback(der->buffer, (int)der->length, type);
+#ifndef SINGLE_THREADED
+        }
+        else {
+            WOLFSSL_MSG("\tCA Mutex Lock failed");
+            ret = BAD_MUTEX_E;
+            FreeSigner(signer, cm->heap);
+        }
+#endif
+    }
+
+    WOLFSSL_MSG("\tFreeing Parsed CA");
+    FreeDecodedCert(cert);
+    WOLFSSL_MSG("\tFreeing der CA");
+    FreeDer(pDer);
+    WOLFSSL_MSG("\t\tOK Freeing der CA");
+
+    WOLFSSL_LEAVE("AddCA", ret);
+
+    return ret == 0 ? WOLFSSL_SUCCESS : ret;
+}
+
 
 /* return CA if found, otherwise NULL */
 Signer* GetCA(void* vp, byte* hash)
@@ -2121,10 +2299,10 @@ Signer* GetCA(void* vp, byte* hash)
         return NULL;
 
     row = HashSigner(hash);
-
+#ifndef SINGLE_THREADED
     if (wc_LockMutex(&cm->caLock) != 0)
         return ret;
-
+#endif
     signers = cm->caTable[row];
     while (signers) {
         byte* subjectHash;
@@ -2137,8 +2315,9 @@ Signer* GetCA(void* vp, byte* hash)
         }
         signers = signers->next;
     }
+#ifndef SINGLE_THREADED
     wc_UnLockMutex(&cm->caLock);
-
+#endif
     return ret;
 }
 
@@ -2913,7 +3092,7 @@ static int HashForSignature(const byte* buf, word32 bufSz, word32 sigOID,
         case CTC_SHA256wRSA:
         case CTC_SHA256wECDSA:
         case CTC_SHA256wDSA:
-            if ((ret = wc_Sha256Hash(buf, bufSz, digest)) == 0) {
+            if ((ret = wc_Sha256Hash_(buf, bufSz, digest)) == 0) {
                 *typeH    = SHA256h;
                 *digestSz = WC_SHA256_DIGEST_SIZE;
             }
@@ -2922,7 +3101,7 @@ static int HashForSignature(const byte* buf, word32 bufSz, word32 sigOID,
     #ifdef WOLFSSL_SHA384
         case CTC_SHA384wRSA:
         case CTC_SHA384wECDSA:
-            if ((ret = wc_Sha384Hash(buf, bufSz, digest)) == 0) {
+            if ((ret = wc_Sha384Hash_(buf, bufSz, digest)) == 0) {
                 *typeH    = SHA384h;
                 *digestSz = WC_SHA384_DIGEST_SIZE;
             }
@@ -2952,6 +3131,7 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
     const byte* sig, word32 sigSz, word32 sigOID, byte* rsaKeyIdx)
 {
     int ret = 0;
+    ecc_key  eccKey;
 #ifndef WOLFSSL_RENESAS_TSIP_TLS
     (void)rsaKeyIdx;
 #endif
@@ -2973,12 +3153,13 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
         {
             sigCtx->keyOID = keyOID; /* must set early for cleanup */
 
+#ifndef WOLFSSL_NO_MALLOC
             sigCtx->digest = (byte*)XMALLOC(WC_MAX_DIGEST_SIZE, sigCtx->heap,
                                                     DYNAMIC_TYPE_DIGEST);
             if (sigCtx->digest == NULL) {
                 ERROR_OUT(MEMORY_E, exit_cs);
             }
-
+#endif
             sigCtx->state = SIG_STATE_HASH;
         } /* SIG_STATE_BEGIN */
         FALL_THROUGH;
@@ -3004,11 +3185,15 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                     word32 idx = 0;
 
                     sigCtx->verify = 0;
+#ifndef WOLFSSL_NO_MALLOC
                     sigCtx->key.ecc = (ecc_key*)XMALLOC(sizeof(ecc_key),
                                                 sigCtx->heap, DYNAMIC_TYPE_ECC);
                     if (sigCtx->key.ecc == NULL) {
                         ERROR_OUT(MEMORY_E, exit_cs);
                     }
+#else
+                    sigCtx->key.ecc = &eccKey;
+#endif
                     if ((ret = wc_ecc_init_ex(sigCtx->key.ecc, sigCtx->heap,
                                                           sigCtx->devId)) < 0) {
                         goto exit_cs;
@@ -3131,7 +3316,6 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm)
     int    checkPathLen = 0;
     int    decrementMaxPathLen = 0;
     word32 confirmOID = 0;
-    byte*  tsip_encRsaKeyIdx;
     if (cert == NULL) {
         return BAD_FUNC_ARG;
     }
@@ -3274,7 +3458,6 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm)
             }
         }
     }
-    tsip_encRsaKeyIdx = NULL;
     if (verify != NO_VERIFY && type != CA_TYPE && type != TRUSTED_PEER_TYPE) {
         if (cert->ca) {
             if (verify == VERIFY || verify == VERIFY_OCSP ||
@@ -3286,7 +3469,7 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm)
                         cert->ca->publicKey, cert->ca->pubKeySize,
                         cert->ca->keyOID, cert->signature,
                         cert->sigLength, cert->signatureOID,
-                        tsip_encRsaKeyIdx)) != 0) {
+                        NULL)) != 0) {
                     if (ret != WC_PENDING_E) {
                         WOLFSSL_MSG("Confirm signature failed");
                     }
@@ -3317,33 +3500,8 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm)
 int ParseCert(DecodedCert* cert, int type, int verify, void* cm)
 {
     int   ret;
-    char* ptr;
 
     ret = ParseCertRelative(cert, type, verify, cm);
-    if (ret < 0)
-        return ret;
-
-    if (cert->subjectCNLen > 0) {
-        ptr = (char*) XMALLOC(cert->subjectCNLen + 1, cert->heap,
-                              DYNAMIC_TYPE_SUBJECT_CN);
-        if (ptr == NULL)
-            return MEMORY_E;
-        XMEMCPY(ptr, cert->subjectCN, cert->subjectCNLen);
-        ptr[cert->subjectCNLen] = '\0';
-        cert->subjectCN = ptr;
-        cert->subjectCNStored = 1;
-    }
-
-    if (cert->keyOID == RSAk &&
-                          cert->publicKey != NULL  && cert->pubKeySize > 0) {
-        ptr = (char*) XMALLOC(cert->pubKeySize, cert->heap,
-                              DYNAMIC_TYPE_PUBLIC_KEY);
-        if (ptr == NULL)
-            return MEMORY_E;
-        XMEMCPY(ptr, cert->publicKey, cert->pubKeySize);
-        cert->publicKey = (byte *)ptr;
-        cert->pubKeyStored = 1;
-    }
 
     return ret;
 }

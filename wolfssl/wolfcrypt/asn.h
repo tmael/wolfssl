@@ -677,7 +677,11 @@ enum SignatureState {
 
 struct SignatureCtx {
     void* heap;
+#ifndef WOLFSSL_NO_MALLOC
     byte* digest;
+#else
+    byte digest[512];
+#endif
 #ifndef NO_RSA
     byte* out;
 #endif
@@ -695,7 +699,7 @@ struct SignatureCtx {
         struct DsaKey*      dsa;
     #endif
     #ifdef HAVE_ECC
-        struct ecc_key*     ecc;
+    struct ecc_key*     ecc;
     #endif
     #ifdef HAVE_ED25519
         struct ed25519_key* ed25519;
@@ -777,9 +781,12 @@ typedef struct TrustedPeerCert TrustedPeerCert;
 typedef struct SignatureCtx SignatureCtx;
 typedef struct CertSignCtx  CertSignCtx;
 
-
 struct DecodedCert {
+#if defined(WOLFSSL_NO_MALLOC)   
+    byte publicKey[WOLFSSL_MAX_PATH_LEN];
+#else
     const byte* publicKey;
+#endif     
     word32  pubKeySize;
     int     pubKeyStored;
     word32  certBegin;               /* offset to start of cert          */
@@ -801,8 +808,12 @@ struct DecodedCert {
     byte    subjectKeyHash[KEYID_SIZE]; /* hash of the public Key         */
     byte    issuerKeyHash[KEYID_SIZE]; /* hash of the public Key         */
 #endif /* HAVE_OCSP */
-    const byte* signature;           /* not owned, points into raw cert  */
+#if defined(WOLFSSL_NO_MALLOC) 
+    char   subjectCN[ASN_NAME_MAX];  /* CommonName                       */
+#else
     char*   subjectCN;               /* CommonName                       */
+#endif     
+    const byte* signature;           /* not owned, points into raw cert  */
     int     subjectCNLen;            /* CommonName Length                */
     char    subjectCNEnc;            /* CommonName Encoding              */
     char    issuer[ASN_NAME_MAX];    /* full name including common name  */

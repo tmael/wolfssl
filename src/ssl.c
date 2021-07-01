@@ -4784,8 +4784,11 @@ int AddCA(WOLFSSL_CERT_MANAGER* cm, DerBuffer** pDer, int type, int verify)
         signer->keyUsage = cert->extKeyUsageSet ? cert->extKeyUsage
                                                 : 0xFFFF;
         signer->next    = NULL; /* If Key Usage not set, all uses valid. */
+
+#ifndef WOLFSSL_NO_MALLOC
         cert->publicKey = 0;    /* in case lock fails don't free here.   */
         cert->subjectCN = 0;
+#endif
     #ifndef IGNORE_NAME_CONSTRAINTS
         cert->permittedNames = NULL;
         cert->excludedNames = NULL;

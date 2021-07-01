@@ -1309,12 +1309,12 @@ initDefaultName();
     else
         test_pass("ber-der  test passed!\n");
 #endif
-
+#ifndef HAVE_DO178
     if ( (ret = logging_test()) != 0)
         return err_sys("logging  test failed!\n", ret);
     else
         test_pass("logging  test passed!\n");
-
+#endif
     if ( (ret = mutex_test()) != 0)
         return err_sys("mutex    test failed!\n", ret);
     else
@@ -1390,7 +1390,9 @@ initDefaultName();
     int main(int argc, char** argv)
 #endif
     {
+#ifndef HAVE_DO178
         int ret;
+#endif /* HAVE_DO178 */
         func_args args;
 #ifdef WOLFSSL_ESPIDF
         /* set dummy wallclock time. */
@@ -1428,21 +1430,24 @@ initDefaultName();
         args.argc = argc;
         args.argv = argv;
 #endif
+#ifndef HAVE_DO178
         if ((ret = wolfCrypt_Init()) != 0) {
             printf("wolfCrypt_Init failed %d\n", ret);
             err_sys("Error with wolfCrypt_Init!\n", -1003);
         }
-
+#endif /* HAVE_DO178 */
     #ifdef HAVE_STACK_SIZE
         StackSizeCheck(&args, wolfcrypt_test);
     #else
         wolfcrypt_test(&args);
     #endif
 
+#ifndef HAVE_DO178
         if ((ret = wolfCrypt_Cleanup()) != 0) {
             printf("wolfCrypt_Cleanup failed %d\n", ret);
             err_sys("Error with wolfCrypt_Cleanup!\n", -1004);
         }
+#endif /* HAVE_DO178 */
 
 #ifdef HAVE_WNR
         if (wc_FreeNetRandom() < 0)
@@ -20687,7 +20692,9 @@ static int ecc_test_make_pub(WC_RNG* rng)
 #endif
     word32 tmpSz;
     int ret = 0;
+#ifndef WOLFSSL_NO_MALLOC
     ecc_point* pubPoint = NULL;
+#endif
 #ifdef HAVE_ECC_VERIFY
     int verify = 0;
 #endif
@@ -20911,7 +20918,9 @@ static int ecc_test_make_pub(WC_RNG* rng)
 
 done:
 
+#ifndef WOLFSSL_NO_MALLOC
     wc_ecc_del_point_h(pubPoint, HEAP_HINT);
+#endif
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     if (key != NULL) {
@@ -33879,6 +33888,7 @@ static void my_Logging_cb(const int logLevel, const char *const logMessage)
 }
 #endif /* DEBUG_WOLFSSL */
 
+#ifndef HAVE_DO178
 WOLFSSL_TEST_SUBROUTINE int logging_test(void)
 {
 #ifdef DEBUG_WOLFSSL
@@ -33938,7 +33948,7 @@ WOLFSSL_TEST_SUBROUTINE int logging_test(void)
 #endif /* DEBUG_WOLFSSL */
     return 0;
 }
-
+#endif /* HAVE_DO178 */
 
 WOLFSSL_TEST_SUBROUTINE int mutex_test(void)
 {

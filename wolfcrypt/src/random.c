@@ -582,17 +582,36 @@ static int _InitRng(WC_RNG* rng, byte* nonce, word32 nonceSz,
     return ret;
 }
 
+#ifndef WOLFSSL_DO178_MAX_RNG
+    #define WOLFSSL_DO178_MAX_RNG 4
+#endif
+static byte rng_buffer[WOLFSSL_DO178_MAX_RNG][sizeof(WC_RNG)];
+static int rng_in_use[WOLFSSL_DO178_MAX_RNG] = {0};
 
 WOLFSSL_ABI
 WC_RNG* wc_rng_new(byte* nonce, word32 nonceSz, void* heap)
 {
-    WC_RNG* rng;
-
+    WC_RNG* rng = NULL;
+    int i;
+#ifndef WOLFSSL_NO_MALLOC
     rng = (WC_RNG*)XMALLOC(sizeof(WC_RNG), heap, DYNAMIC_TYPE_RNG);
+#else
+    for (i = 0; i < WOLFSSL_DO178_MAX_RNG; i++) {
+        if (rng_in_use[i] == 0) {
+            rng_in_use[i]++;
+            rng = (WC_RNG*)rng_buffer[i];
+            break;
+        }
+    }
+#endif
     if (rng) {
         int error = _InitRng(rng, nonce, nonceSz, heap, INVALID_DEVID) != 0;
         if (error) {
+#ifndef WOLFSSL_NO_MALLOC
             XFREE(rng, heap, DYNAMIC_TYPE_RNG);
+#else
+            rng_in_use[i] = 0;
+#endif
             rng = NULL;
         }
     }
@@ -609,7 +628,16 @@ void wc_rng_free(WC_RNG* rng)
 
         wc_FreeRng(rng);
         ForceZero(rng, sizeof(WC_RNG));
+#ifndef WOLFSSL_NO_MALLOC
         XFREE(rng, heap, DYNAMIC_TYPE_RNG);
+#else
+    for (int i = 0; i < WOLFSSL_DO178_MAX_RNG; i++) {
+        if (rng == (WC_RNG*)rng_buffer[i]) {
+            rng_in_use[i] = 0;
+            return;
+        }
+    }
+#endif
         (void)heap;
     }
 }

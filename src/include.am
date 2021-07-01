@@ -179,9 +179,7 @@ endif
 
 endif !BUILD_FIPS_RAND
 
-src_libwolfssl_la_SOURCES += \
-               wolfcrypt/src/hash.c \
-               wolfcrypt/src/cpuid.c
+#src_libwolfssl_la_SOURCES += wolfcrypt/src/cpuid.c
 
 if !BUILD_FIPS_RAND
 
@@ -314,20 +312,8 @@ endif
 
 endif !BUILD_FIPS_RAND
 
-src_libwolfssl_la_SOURCES += \
-               wolfcrypt/src/logging.c \
-               wolfcrypt/src/wc_port.c \
-               wolfcrypt/src/error.c
-
-if !BUILD_FIPS_RAND
-src_libwolfssl_la_SOURCES += \
-               wolfcrypt/src/wc_encrypt.c \
-               wolfcrypt/src/signature.c \
-               wolfcrypt/src/wolfmath.c
-endif !BUILD_FIPS_RAND
-
 if BUILD_MEMORY
-src_libwolfssl_la_SOURCES += wolfcrypt/src/memory.c
+#src_libwolfssl_la_SOURCES += wolfcrypt/src/memory.c
 endif
 
 if !BUILD_FIPS_RAND
