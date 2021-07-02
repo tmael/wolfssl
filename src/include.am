@@ -179,7 +179,9 @@ endif
 
 endif !BUILD_FIPS_RAND
 
+#DO178 - uncomment to test on x86_64 with gcc
 #src_libwolfssl_la_SOURCES += wolfcrypt/src/cpuid.c
+#src_libwolfssl_la_SOURCES += wolfcrypt/src/logging.c
 
 if !BUILD_FIPS_RAND
 

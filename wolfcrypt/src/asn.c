@@ -40,14 +40,6 @@ ASN Options:
 
 #ifndef NO_ASN
 
-#ifdef HAVE_DO178
-#undef WOLFSSL_ENTER
-#undef WOLFSSL_LEAVE
-
-#define WOLFSSL_ENTER(m)
-#define WOLFSSL_LEAVE(m, r)
-#endif
-
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/hmac.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
@@ -73,10 +65,6 @@ ASN Options:
 #ifdef HAVE_ECC
     #include <wolfssl/wolfcrypt/ecc.h>
 #endif
-
-#include <wolfssl/internal.h>
-#include <wolfssl/ssl.h>
-#include <wolfssl/error-ssl.h>
 
 #ifndef NO_SHA256
     static const byte hashSha256hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 1};
@@ -1510,14 +1498,7 @@ int GetName(DecodedCert* cert, int nameType, int maxIdx)
                 if (nameType == SUBJECT) {
                     cert->subjectCNLen = strLen;
                     cert->subjectCNEnc = b;
-#ifndef WOLFSSL_NO_MALLOC                       
                     cert->subjectCN = (char *)&cert->source[cert->srcIdx];
-#else
-                    XMEMCPY(cert->subjectCN, &cert->source[cert->srcIdx], strLen);
-                    cert->subjectCN[strLen] = '\0';
-                    cert->subjectCNStored = 1;
-#endif   
-
                 }
 
                 copy = WOLFSSL_COMMON_NAME;
@@ -1756,15 +1737,6 @@ void FreeDecodedCert(DecodedCert* cert)
     if (cert == NULL)
         return;
 
-
-//    if (cert->subjectCNStored == 1) {
-//        XMEMSET(&cert->subjectCN, 0, sizeof(cert->subjectCN));
-//        cert->subjectCNStored = 0;
-//    }
-//    if (cert->pubKeyStored == 1) {
-//        XMEMSET(&cert->publicKey, 0, sizeof(cert->publicKey));
-//        cert->pubKeyStored = 1;
-//    }
 #ifndef IGNORE_NAME_CONSTRAINTS
     if (cert->altEmailNames)
         FreeAltNames(cert->altEmailNames, cert->heap);
@@ -1957,6 +1929,9 @@ static int GetKey(DecodedCert* cert)
                 if (ret != 0)
                     return ret;
             }
+            if (pubLen > WOLFSSL_MAX_PATH_LEN)
+                return ASN_PARSE_E;
+
             XMEMCPY(&cert->publicKey, &cert->source[tmpIdx], pubLen);
             cert->pubKeyStored = 1;            
             cert->pubKeySize   = pubLen;
@@ -2030,295 +2005,12 @@ void FreeSignatureCtx(SignatureCtx* sigCtx)
         return;
 }
 
-/* Make a work from the front of random hash */
-static WC_INLINE word32 MakeWordFromHash(const byte* hashID)
-{
-    return ((word32)hashID[0] << 24) | ((word32)hashID[1] << 16) |
-           ((word32)hashID[2] <<  8) |  (word32)hashID[3];
-}
-
-/* hash is the SHA digest of name, just use first 32 bits as hash */
-static WC_INLINE word32 HashSigner(const byte* hash)
-{
-    return MakeWordFromHash(hash) % CA_TABLE_SIZE;
-}
-
-#ifndef WOLFSSL_DO178_MAX_SIGNERS
-    #define WOLFSSL_DO178_MAX_SIGNERS 4
-#endif
-static byte signer_buffer[WOLFSSL_DO178_MAX_SIGNERS][sizeof(Signer)];
-static int signer_in_use[WOLFSSL_DO178_MAX_SIGNERS] = {0};
-
-/* Create and init an new signer */
-Signer* MakeSigner(void* heap)
-{
-#ifndef WOLFSSL_NO_MALLOC
-    Signer* signer = (Signer*) XMALLOC(sizeof(Signer), heap,
-                                       DYNAMIC_TYPE_SIGNER);
-    if (signer) {
-        XMEMSET(signer, 0, sizeof(Signer));
-    }
-    (void)heap;
-    return signer;
-
-#else
-    int i;
-    (void)heap;
-    for (i = 0; i < WOLFSSL_DO178_MAX_SIGNERS; i++) {
-        if (signer_in_use[i] == 0) {
-            signer_in_use[i]++;
-            return (Signer*)signer_buffer[i];
-        }
-    }
-    return NULL;
-#endif
-
-}
-/* Free an individual signer */
-void FreeSigner(Signer* signer, void* heap)
-{
-    (void)signer;
-    (void)heap;
-
-    for (int i = 0; i < WOLFSSL_DO178_MAX_SIGNERS; i++) {
-        if (signer == (Signer*)signer_buffer[i]) {
-            signer_in_use[i] = 0;
-            return;
-        }
-    }
-}
-/* does CA already exist on signer list */
-int AlreadySigner(WOLFSSL_CERT_MANAGER* cm, byte* hash)
-{
-    Signer* signers;
-    int     ret = 0;
-    word32  row;
-
-    if (cm == NULL || hash == NULL) {
-        return ret;
-    }
-
-    row = HashSigner(hash);
-#ifndef SINGLE_THREADED
-    if (wc_LockMutex(&cm->caLock) != 0) {
-        return ret;
-    }
-#endif
-    signers = cm->caTable[row];
-    while (signers) {
-        byte* subjectHash;
-
-    #ifndef NO_SKID
-        subjectHash = signers->subjectKeyIdHash;
-    #else
-        subjectHash = signers->subjectNameHash;
-    #endif
-
-        if (XMEMCMP(hash, subjectHash, SIGNER_DIGEST_SIZE) == 0) {
-            ret = 1; /* success */
-            break;
-        }
-        signers = signers->next;
-    }
-#ifndef SINGLE_THREADED
-    wc_UnLockMutex(&cm->caLock);
-#endif
-    return ret;
-}
-void FreeDer(DerBuffer** pDer)
-{
-    if (pDer && *pDer)
-    {
-        DerBuffer* der = (DerBuffer*)*pDer;
-
-        /* ForceZero private keys */
-        if (der->type == PRIVATEKEY_TYPE) {
-            ForceZero(der->buffer, der->length);
-        }
-#ifndef WOLFSSL_NO_MALLOC
-        der->buffer = NULL;
-#endif
-        XMEMSET(der, 0, der->length);
-        der->length = 0;
-    }
-}
-
-/* owns der, internal now uses too */
-/* type flag ids from user or from chain received during verify
-   don't allow chain ones to be added w/o isCA extension */
-int AddCA(WOLFSSL_CERT_MANAGER* cm, DerBuffer** pDer, int type, int verify)
-{
-    int         ret;
-    Signer*     signer = NULL;
-    word32      row;
-    byte*       subjectHash;
-    DecodedCert  cert[1];
-
-    DerBuffer*   der = *pDer;
-
-    WOLFSSL_MSG("Adding a CA");
-
-    if (cm == NULL) {
-        FreeDer(pDer);
-        return BAD_FUNC_ARG;
-    }
-
-    InitDecodedCert(cert, der->buffer, der->length, cm->heap);
-    ret = ParseCert(cert, CA_TYPE, verify, cm);
-    WOLFSSL_MSG("\tParsed new CA");
-
-#ifndef NO_SKID
-    subjectHash = cert->extSubjKeyId;
-#else
-    subjectHash = cert->subjectHash;
-#endif
-
-    /* check CA key size */
-    if (verify) {
-        switch (cert->keyOID) {
-            #ifdef HAVE_ECC
-            case ECDSAk:
-                if (cm->minEccKeySz < 0 ||
-                                   cert->pubKeySize < (word16)cm->minEccKeySz) {
-                    ret = ECC_KEY_SIZE_E;
-                    WOLFSSL_MSG("\tCA ECC key size error");
-                }
-                break;
-            #endif /* HAVE_ECC */
-            default:
-                WOLFSSL_MSG("\tNo key size check done on CA");
-                break; /* no size check if key type is not in switch */
-        }
-    }
-
-    if (ret == 0 && cert->isCA == 0 && type != WOLFSSL_USER_CA) {
-        WOLFSSL_MSG("\tCan't add as CA if not actually one");
-        ret = NOT_CA_ERROR;
-    }
-#ifndef ALLOW_INVALID_CERTSIGN
-    else if (ret == 0 && cert->isCA == 1 && type != WOLFSSL_USER_CA &&
-        !cert->selfSigned && (cert->extKeyUsage & KEYUSE_KEY_CERT_SIGN) == 0) {
-        /* Intermediate CA certs are required to have the keyCertSign
-        * extension set. User loaded root certs are not. */
-        WOLFSSL_MSG("\tDoesn't have key usage certificate signing");
-        ret = NOT_CA_ERROR;
-    }
-#endif
-    else if (ret == 0 && AlreadySigner(cm, subjectHash)) {
-        WOLFSSL_MSG("\tAlready have this CA, not adding again");
-        (void)ret;
-    }
-    else if (ret == 0) {
-        /* take over signer parts */
-        signer = MakeSigner(cm->heap);
-        if (!signer)
-            ret = MEMORY_ERROR;
-    }
-    if (ret == 0 && signer != NULL) {
-    #ifdef WOLFSSL_SIGNER_DER_CERT
-        ret = AllocDer(&signer->derCert, der->length, der->type, NULL);
-    }
-    if (ret == 0 && signer != NULL) {
-        XMEMCPY(signer->derCert->buffer, der->buffer, der->length);
-    #endif
-        signer->keyOID         = cert->keyOID;
-        if (cert->pubKeyStored) {
-            signer->publicKey      = cert->publicKey;
-            signer->pubKeySize     = cert->pubKeySize;
-        }
-        if (cert->subjectCNStored) {
-            signer->nameLen        = cert->subjectCNLen;
-            signer->name           = cert->subjectCN;
-        }
-        signer->pathLength     = cert->pathLength;
-        signer->maxPathLen     = cert->maxPathLen;
-        signer->pathLengthSet  = cert->pathLengthSet;
-        signer->selfSigned     = cert->selfSigned;
-    #ifndef IGNORE_NAME_CONSTRAINTS
-        signer->permittedNames = cert->permittedNames;
-        signer->excludedNames  = cert->excludedNames;
-    #endif
-        XMEMCPY(signer->subjectNameHash, cert->subjectHash,
-                SIGNER_DIGEST_SIZE);
-
-        signer->keyUsage = cert->extKeyUsageSet ? cert->extKeyUsage
-                                                : 0xFFFF;
-        signer->next    = NULL; /* If Key Usage not set, all uses valid. */
-
-    #ifndef IGNORE_NAME_CONSTRAINTS
-        cert->permittedNames = NULL;
-        cert->excludedNames = NULL;
-    #endif
-
-    #ifndef NO_SKID
-        row = HashSigner(signer->subjectKeyIdHash);
-    #else
-        row = HashSigner(signer->subjectNameHash);
-    #endif
-#ifndef SINGLE_THREADED
-        if (wc_LockMutex(&cm->caLock) == 0) {
-#endif
-            signer->next = cm->caTable[row];
-            cm->caTable[row] = signer;   /* takes ownership */
-#ifndef SINGLE_THREADED
-            wc_UnLockMutex(&cm->caLock);
-#endif
-            if (cm->caCacheCallback)
-                cm->caCacheCallback(der->buffer, (int)der->length, type);
-#ifndef SINGLE_THREADED
-        }
-        else {
-            WOLFSSL_MSG("\tCA Mutex Lock failed");
-            ret = BAD_MUTEX_E;
-            FreeSigner(signer, cm->heap);
-        }
-#endif
-    }
-
-    WOLFSSL_MSG("\tFreeing Parsed CA");
-    FreeDecodedCert(cert);
-    WOLFSSL_MSG("\tFreeing der CA");
-    FreeDer(pDer);
-    WOLFSSL_MSG("\t\tOK Freeing der CA");
-
-    WOLFSSL_LEAVE("AddCA", ret);
-
-    return ret == 0 ? WOLFSSL_SUCCESS : ret;
-}
-
-
 /* return CA if found, otherwise NULL */
-Signer* GetCA(void* vp, byte* hash)
+static Signer* GetCA(void* vp, byte* hash)
 {
-    WOLFSSL_CERT_MANAGER* cm = (WOLFSSL_CERT_MANAGER*)vp;
-    Signer* ret = NULL;
-    Signer* signers;
-    word32  row = 0;
+    (void)hash;
 
-    if (cm == NULL || hash == NULL)
-        return NULL;
-
-    row = HashSigner(hash);
-#ifndef SINGLE_THREADED
-    if (wc_LockMutex(&cm->caLock) != 0)
-        return ret;
-#endif
-    signers = cm->caTable[row];
-    while (signers) {
-        byte* subjectHash;
-
-        subjectHash = signers->subjectNameHash;
-
-        if (XMEMCMP(hash, subjectHash, SIGNER_DIGEST_SIZE) == 0) {
-            ret = signers;
-            break;
-        }
-        signers = signers->next;
-    }
-#ifndef SINGLE_THREADED
-    wc_UnLockMutex(&cm->caLock);
-#endif
-    return ret;
+    return (Signer*)vp;
 }
 
 int SetMyVersion(word32 version, byte* output, int header)

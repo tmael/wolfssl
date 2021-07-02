@@ -623,6 +623,9 @@ WC_RNG* wc_rng_new(byte* nonce, word32 nonceSz, void* heap)
 WOLFSSL_ABI
 void wc_rng_free(WC_RNG* rng)
 {
+#ifdef WOLFSSL_NO_MALLOC
+    int i;
+#endif
     if (rng) {
         void* heap = rng->heap;
 
@@ -631,7 +634,7 @@ void wc_rng_free(WC_RNG* rng)
 #ifndef WOLFSSL_NO_MALLOC
         XFREE(rng, heap, DYNAMIC_TYPE_RNG);
 #else
-    for (int i = 0; i < WOLFSSL_DO178_MAX_RNG; i++) {
+    for (i = 0; i < WOLFSSL_DO178_MAX_RNG; i++) {
         if (rng == (WC_RNG*)rng_buffer[i]) {
             rng_in_use[i] = 0;
             return;

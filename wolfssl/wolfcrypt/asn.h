@@ -66,6 +66,10 @@ that can be serialized and deserialized in a cross-platform way.
 #include <wolfssl/wolfcrypt/sha256.h>
 #include <wolfssl/wolfcrypt/asn_public.h>   /* public interface */
 
+#if defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)
+    #include <wolfssl/wolfcrypt/sha512.h>
+#endif
+
 #if defined(NO_SHA) && defined(NO_SHA256)
     #define WC_SHA256_DIGEST_SIZE 32
 #endif
@@ -680,7 +684,7 @@ struct SignatureCtx {
 #ifndef WOLFSSL_NO_MALLOC
     byte* digest;
 #else
-    byte digest[512];
+    byte digest[WC_SHA512_DIGEST_SIZE];
 #endif
 #ifndef NO_RSA
     byte* out;
@@ -808,11 +812,7 @@ struct DecodedCert {
     byte    subjectKeyHash[KEYID_SIZE]; /* hash of the public Key         */
     byte    issuerKeyHash[KEYID_SIZE]; /* hash of the public Key         */
 #endif /* HAVE_OCSP */
-#if defined(WOLFSSL_NO_MALLOC) 
-    char   subjectCN[ASN_NAME_MAX];  /* CommonName                       */
-#else
     char*   subjectCN;               /* CommonName                       */
-#endif     
     const byte* signature;           /* not owned, points into raw cert  */
     int     subjectCNLen;            /* CommonName Length                */
     char    subjectCNEnc;            /* CommonName Encoding              */

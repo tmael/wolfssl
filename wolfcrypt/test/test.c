@@ -1488,6 +1488,7 @@ static int _SaveDerAndPem(const byte* der, int derSz,
     }
 #endif
 
+#ifndef HAVE_DO178
 #ifdef WOLFSSL_DER_TO_PEM
     if (filePem) {
     #if !defined(NO_FILESYSTEM) && !defined(NO_WRITE_TEMP_FILES)
@@ -1527,7 +1528,7 @@ static int _SaveDerAndPem(const byte* der, int derSz,
         XFREE(pem, HEAP_HINT, DYNAMIC_TYPE_TMP_BUFFER);
     }
 #endif /* WOLFSSL_DER_TO_PEM */
-
+#endif /* HAVE_DO178 */
     /* suppress unused variable warnings */
     (void)der;
     (void)derSz;

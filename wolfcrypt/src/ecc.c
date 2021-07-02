@@ -1034,14 +1034,6 @@ int wc_ecc_point_is_on_curve(ecc_point *p, int curve_idx)
 }
 #endif /* USE_ECC_B_PARAM */
 
-// int get_digit_count(mp_int* a)
-// {
-//     if (a == NULL)
-//         return 0;
-
-//     return a->used;
-// }
-
 /* return 1 if point is at infinity, 0 if not, < 0 on error */
 int wc_ecc_point_is_at_infinity(ecc_point* p)
 {
@@ -1275,66 +1267,6 @@ int wc_ecc_make_key_ex(WC_RNG* rng, int keysize, ecc_key* key, int curve_id)
 {
     return wc_ecc_make_key_ex2(rng, keysize, key, curve_id, WC_ECC_FLAG_NONE);
 }
-
-#ifndef WOLFSSL_DO178_MAX_ECC_KEY
-    #define WOLFSSL_DO178_MAX_ECC_KEY 4
-#endif
-static byte ecc_key_buffer[WOLFSSL_DO178_MAX_ECC_KEY][sizeof(ecc_key)];
-static int ecc_key_in_use[WOLFSSL_DO178_MAX_ECC_KEY] = {0};
-
-WOLFSSL_ABI
-ecc_key* wc_ecc_key_new(void* heap)
-{
-    ecc_key* key = NULL;
-    int i;
-#ifndef WOLFSSL_NO_MALLOC
-    key = (ecc_key*)XMALLOC(sizeof(ecc_key), heap, DYNAMIC_TYPE_ECC);
-#else
-    for (i = 0; i < WOLFSSL_DO178_MAX_ECC_KEY; i++) {
-        if (ecc_key_in_use[i] == 0) {
-            ecc_key_in_use[i]++;
-            key = (ecc_key*)ecc_key_buffer[i];
-            break;
-        }
-    }
-#endif
-    if (key) {
-        if (wc_ecc_init_ex(key, heap, INVALID_DEVID) != 0) {
-#ifndef WOLFSSL_NO_MALLOC
-            XFREE(key, heap, DYNAMIC_TYPE_ECC);
-#else
-		    ecc_key_in_use[i] = 0;
-#endif
-            key = NULL;
-        }
-    }
-
-    return key;
-}
-
-
-WOLFSSL_ABI
-void wc_ecc_key_free(ecc_key* key)
-{
-    if (key) {
-        void* heap = key->heap;
-
-        wc_ecc_free(key);
-        ForceZero(key, sizeof(ecc_key));
-#ifndef WOLFSSL_NO_MALLOC
-        XFREE(key, heap, DYNAMIC_TYPE_ECC);
-#else
-    for (int i = 0; i < WOLFSSL_DO178_MAX_ECC_KEY; i++) {
-        if (key == (ecc_key*)ecc_key_buffer[i]) {
-            ecc_key_in_use[i] = 0;
-            return;
-        }
-    }
-#endif
-    (void)heap;
-    }
-}
-
 
 /**
  Make a new ECC key
