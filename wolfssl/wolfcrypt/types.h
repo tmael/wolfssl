@@ -244,8 +244,10 @@ decouple library dependencies with standard string, memory and so on.
         #elif defined(__GNUC__)
                #ifdef WOLFSSL_VXWORKS
                    #define WC_INLINE __inline__
-               #else
+               #elif defined(__GNUC_STDC_INLINE__)
                    #define WC_INLINE inline
+               #else
+                   #define WC_INLINE
                #endif
         #elif defined(__IAR_SYSTEMS_ICC__)
             #define WC_INLINE inline
@@ -643,6 +645,8 @@ decouple library dependencies with standard string, memory and so on.
                 #define XSTRNCASECMP(s1,s2,n) strnicmp((s1),(s2),(n))
             #elif defined(WOLFSSL_CMSIS_RTOSv2)
                 #define XSTRNCASECMP(s1,s2,n) strncmp((s1),(s2),(n))
+            #elif !defined(WOLF_C99) && defined(__STDC__)
+                #define XSTRNCASECMP(s1,s2,n) strncmp((s1),(s2),(n))
             #else
                 #define XSTRNCASECMP(s1,s2,n) strncasecmp((s1),(s2),(n))
             #endif
@@ -688,8 +692,10 @@ decouple library dependencies with standard string, memory and so on.
                         return ret;
                     }
                 #define XSNPRINTF _xsnprintf_
-            #else
+            #elif defined(WOLF_C99)
                 #define XSNPRINTF snprintf
+            #else
+                #define XSNPRINTF
             #endif
             #endif
         #else
