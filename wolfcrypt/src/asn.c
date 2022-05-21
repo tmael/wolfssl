@@ -19506,7 +19506,7 @@ wcchar END_PUB_KEY          = "-----END PUBLIC KEY-----";
 
 const int pem_struct_min_sz = XSTR_SIZEOF("-----BEGIN X509 CRL-----"
                                              "-----END X509 CRL-----");
-
+#ifdef WOLFSSL_PEM_TO_DER
 static WC_INLINE const char* SkipEndOfLineChars(const char* line,
                                                 const char* endOfLine)
 {
@@ -19517,7 +19517,7 @@ static WC_INLINE const char* SkipEndOfLineChars(const char* line,
     }
     return line;
 }
-
+#endif
 int wc_PemGetHeaderFooter(int type, const char** header, const char** footer)
 {
     int ret = BAD_FUNC_ARG;
