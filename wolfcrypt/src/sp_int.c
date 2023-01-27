@@ -47,9 +47,9 @@ This library provides single precision (SP) integer math functions.
  * WOLFSSL_HAVE_SP_DH:          Enable SP DH support
  * WOLFSSL_HAVE_SP_ECC:         Enable SP ECC support
  * WOLFSSL_SP_MATH:             Use only single precision math and algorithms
- *      it supports (no fastmath tfm.c or normal integer.c)
+ *      it supports (no fastmath tfm.c)
  * WOLFSSL_SP_MATH_ALL          Implementation of all MP functions
- *      (replacement for tfm.c and integer.c)
+ *      (replacement for tfm.c)
  * WOLFSSL_SP_SMALL:            Use smaller version of code and avoid large
  *      stack variables
  * WOLFSSL_SP_NO_MALLOC:        Always use stack, no heap XMALLOC/XFREE allowed

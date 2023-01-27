@@ -443,7 +443,6 @@
     #define NO_FILESYSTEM
     #define USE_FAST_MATH
     #define TFM_TIMING_RESISTANT
-    #define NO_BIG_INT
 #endif
 
 #ifdef WOLFSSL_MICROCHIP_PIC32MZ
@@ -515,7 +514,6 @@
     #define HAVE_NULL_CIPHER
     #define NO_OLD_TLS
     #define NO_ASN
-    #define NO_BIG_INT
     #define NO_RSA
     #define NO_DSA
     #define NO_DH
@@ -1952,11 +1950,6 @@ extern void uITRON4_free(void *p) ;
          *      Constant time: Only with TFM_TIMING_RESISTANT
          *      Enable:        USE_FAST_MATH
          */
-    #elif defined(USE_INTEGER_HEAP_MATH)
-        /*  4) Integer Heap Math:  Heap based (integer.c)
-         *      Constant time: Not supported
-         *      Enable:        USE_INTEGER_HEAP_MATH
-         */
     #else
         /* default is SP Math. */
         #define WOLFSSL_SP_MATH_ALL
@@ -1970,6 +1963,8 @@ extern void uITRON4_free(void *p) ;
         #ifndef FP_MAX_BITS
             #define FP_MAX_BITS 8192
         #endif
+    #else
+        #error "USE_INTEGER_HEAP_MATH has been deprecated"
     #endif
 #endif
 /*----------------------------------------------------------------------------*/
@@ -2332,7 +2327,7 @@ extern void uITRON4_free(void *p) ;
          #error static memory cannot be used with HAVE_IO_POOL, XMALLOC_USER or NO_WOLFSSL_MEMORY
     #endif
     #if !defined(WOLFSSL_SP_MATH_ALL) && !defined(USE_FAST_MATH) && \
-        !defined(WOLFSSL_SP_MATH) && !defined(NO_BIG_INT)
+        !defined(WOLFSSL_SP_MATH)
          #error The static memory option is only supported for fast math or SP Math
     #endif
     #ifdef WOLFSSL_SMALL_STACK

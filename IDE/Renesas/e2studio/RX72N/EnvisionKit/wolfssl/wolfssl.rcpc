@@ -53,7 +53,6 @@
           <Path>..\..\..\..\..\..\wolfcrypt\src\ge_operations.c</Path>
           <Path>..\..\..\..\..\..\wolfcrypt\src\hash.c</Path>
           <Path>..\..\..\..\..\..\wolfcrypt\src\hmac.c</Path>
-          <Path>..\..\..\..\..\..\wolfcrypt\src\integer.c</Path>
           <Path>..\..\..\..\..\..\wolfcrypt\src\kdf.c</Path>
           <Path>..\..\..\..\..\..\wolfcrypt\src\logging.c</Path>
           <Path>..\..\..\..\..\..\wolfcrypt\src\md2.c</Path>

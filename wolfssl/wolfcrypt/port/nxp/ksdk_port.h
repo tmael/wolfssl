@@ -27,8 +27,6 @@
     #include <wolfssl/wolfcrypt/tfm.h>
 #elif defined WOLFSSL_SP_MATH
     #include <wolfssl/wolfcrypt/sp_int.h>
-#else
-    #include <wolfssl/wolfcrypt/integer.h>
 #endif
 #include <wolfssl/wolfcrypt/ecc.h>
 #include <wolfssl/wolfcrypt/curve25519.h>

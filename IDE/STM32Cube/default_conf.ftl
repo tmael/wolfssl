@@ -195,7 +195,7 @@ extern ${variable.value} ${variable.name};
 /* Math Configuration */
 /* ------------------------------------------------------------------------- */
 /* 1=Fast (stack)
- * 2=Normal (heap)
+ * 2=Normal (heap) /* Has been deprecated */
  * 3=Single Precision C (only common curves/key sizes)
  * 4=Single Precision ASM Cortex-M3+
  * 5=Single Precision ASM Cortex-M0 (Generic Thumb)
@@ -210,9 +210,6 @@ extern ${variable.value} ${variable.name};
     /* Optimizations (TFM_ARM, TFM_ASM or none) */
     //#define TFM_NO_ASM
     //#define TFM_ASM
-#elif defined(WOLF_CONF_MATH) && WOLF_CONF_MATH == 2
-    /* heap math - integer.c */
-    #define USE_INTEGER_HEAP_MATH
 #elif defined(WOLF_CONF_MATH) && (WOLF_CONF_MATH >= 3)
     /* single precision only */
     #define WOLFSSL_SP

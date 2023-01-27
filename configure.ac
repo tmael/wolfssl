@@ -626,11 +626,9 @@ then
             ENABLED_FASTMATH="no"
         else
             AM_CFLAGS="$AM_CFLAGS -DUSE_FAST_MATH"
-            ENABLED_HEAPMATH="no"
         fi
     else
         AM_CFLAGS="$AM_CFLAGS -DUSE_FAST_MATH"
-        ENABLED_HEAPMATH="no"
         ENABLED_SP_MATH_ALL="no"
     fi
     AS_IF([test "x$host_cpu" = "xaarch64"],[AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_AARCH64_BUILD"])
@@ -648,15 +646,12 @@ AC_ARG_ENABLE([heapmath],
     [ ENABLED_HEAPMATH=$enableval ],
     [ ENABLED_HEAPMATH=no]
     )
-if test "x$ENABLED_HEAPMATH" = "xyes" || (test "x$ENABLED_SP_MATH_ALL" = "xno" && test "x$ENABLED_FASTMATH" = "xno" && test "x$ENABLED_SP_MATH" = "xno")
+
+if test "$ENABLED_HEAPMATH" = "yes"
 then
-    AM_CFLAGS="$AM_CFLAGS -DUSE_INTEGER_HEAP_MATH"
-    ENABLED_HEAPMATH="yes"
-    ENABLED_SP="no"
-    ENABLED_SP_MATH_ALL="no"
+    AC_MSG_ERROR([USE_INTEGER_HEAP_MATH has been deprecated and cannot be used.
+                You can use the default math enabled with --enable-sp-math-all])
 fi
-
-
 
 # ALL FEATURES
 AC_ARG_ENABLE([all],
@@ -3921,16 +3916,11 @@ if test "$ENABLED_ASN" = "no"
 then
     AM_CFLAGS="$AM_CFLAGS -DNO_ASN -DNO_ASN_CRYPT"
     enable_pwdbased=no
-    if test "$ENABLED_DH" = "no" && test "$ENABLED_ECC" = "no"
-    then
-        # DH and ECC need bigint
-        AM_CFLAGS="$AM_CFLAGS -DNO_BIG_INT"
-    fi
 else
     # turn off ASN if leanpsk on
     if test "$ENABLED_LEANPSK" = "yes"
     then
-        AM_CFLAGS="$AM_CFLAGS -DNO_ASN -DNO_BIG_INT"
+        AM_CFLAGS="$AM_CFLAGS -DNO_ASN"
         ENABLED_ASN=no
     else
         if test "$ENABLED_ASN" = "nocrypt"
@@ -3959,7 +3949,6 @@ if test "$ENABLED_ASN" = "no" && test "$ENABLED_DSA" = "no" && \
 then
     ENABLED_SP_MATH_ALL="no"
     ENABLED_FASTMATH="no"
-    ENABLED_HEAPMATH="no"
     ENABLED_BIGNUM="no"
 else
     ENABLED_BIGNUM="yes"
@@ -7205,10 +7194,6 @@ if test "x$ENABLED_STATICMEMORY" = "xyes"
 then
     AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_STATIC_MEMORY"
 
-    if test "x$ENABLED_HEAPMATH" = "xyes"
-    then
-        AC_MSG_ERROR([please use --enable-fastmath if enabling staticmemory.])
-    fi
     if test "$ENABLED_LOWRESOURCE" = "yes" && test "$ENABLED_RSA" = "no"
     then
         AM_CFLAGS="$AM_CFLAGS -DWOLFSSL_STATIC_MEMORY_SMALL"
@@ -7576,7 +7561,7 @@ fi
 
 # When building for wolfRand, strip out all options to disable everything.
 AS_IF([test "x$ENABLED_FIPS" = "xyes" && test "x$FIPS_VERSION" = "xrand"],
-[NEW_AM_CFLAGS="-DNO_AES -DNO_DH -DNO_ASN -DNO_RSA -DNO_SHA -DNO_MD5 -DNO_BIG_INT"
+[NEW_AM_CFLAGS="-DNO_AES -DNO_DH -DNO_ASN -DNO_RSA -DNO_SHA -DNO_MD5"
 for v in $AM_CFLAGS
 do
   case $v in
@@ -8733,7 +8718,6 @@ else
 fi
 echo "   * SP implementation:          $ENABLED_SP_MATH_DESC"
 echo "   * Fast Math:                  $ENABLED_FASTMATH"
-echo "   * Heap Math:                  $ENABLED_HEAPMATH"
 echo "   * Assembly Allowed:           $ENABLED_ASM"
 echo "   * sniffer:                    $ENABLED_SNIFFER"
 echo "   * snifftest:                  $ENABLED_SNIFFTEST"

@@ -185,10 +185,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\include\integer.h"
-				>
-			</File>
-			<File
 				RelativePath=".\include\md4.h"
 				>
 			</File>
@@ -274,10 +270,6 @@
 			</File>
 			<File
 				RelativePath=".\src\hmac.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\integer.c"
 				>
 			</File>
 			<File

@@ -604,10 +604,6 @@ if BUILD_FASTMATH
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/tfm.c
 endif
 
-if BUILD_HEAPMATH
-src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/integer.c
-endif
-
 if !BUILD_FIPS_CURRENT
 if BUILD_ECC
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/ecc.c

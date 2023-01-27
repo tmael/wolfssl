@@ -34,7 +34,6 @@ nobase_include_HEADERS+= \
                          wolfssl/wolfcrypt/hmac.h \
                          wolfssl/wolfcrypt/hpke.h \
                          wolfssl/wolfcrypt/kdf.h \
-                         wolfssl/wolfcrypt/integer.h \
                          wolfssl/wolfcrypt/md2.h \
                          wolfssl/wolfcrypt/md4.h \
                          wolfssl/wolfcrypt/md5.h \

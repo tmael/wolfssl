@@ -29,7 +29,6 @@
 
 /* includes for compatibility */
 #include <cyassl/ctaocrypt/types.h>
-#include <cyassl/ctaocrypt/integer.h>
 #include <cyassl/ctaocrypt/random.h>
 
 /* for ecc reverse compatibility */

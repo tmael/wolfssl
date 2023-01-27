@@ -30,7 +30,6 @@
         <itemPath>../../wolfcrypt/src/ecc_fp.c</itemPath>
         <itemPath>../../wolfcrypt/src/error.c</itemPath>
         <itemPath>../../wolfcrypt/src/hmac.c</itemPath>
-        <itemPath>../../wolfcrypt/src/integer.c</itemPath>
         <itemPath>../../wolfcrypt/src/logging.c</itemPath>
         <itemPath>../../wolfcrypt/src/md2.c</itemPath>
         <itemPath>../../wolfcrypt/src/md4.c</itemPath>

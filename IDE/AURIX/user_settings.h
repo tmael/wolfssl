@@ -93,7 +93,7 @@ extern unsigned int my_rng_seed_gen(void);
     #define WOLFSSL_SP_4096 /* Enable RSA/RH 4096-bit support */
     #define WOLFSSL_SP_384 /* Enable ECC 384-bit SECP384R1 support */
 
-    #define WOLFSSL_SP_MATH     /* only SP math - disables integer.c/tfm.c */
+    #define WOLFSSL_SP_MATH     /* only SP math - disables tfm.c */
     //#define WOLFSSL_SP_MATH_ALL /* use SP math for all key sizes and curves */
 
     #define WOLFSSL_SP_NO_MALLOC
@@ -109,17 +109,6 @@ extern unsigned int my_rng_seed_gen(void);
     //#define WOLFSSL_SP_ARM64_ASM
     //#define WOLFSSL_SP_ARM_THUMB_ASM
     //#define WOLFSSL_SP_ARM_CORTEX_M_ASM
-#endif
-
-#ifndef WOLFSSL_SP_MATH
-    #if 0
-        /* fast math (tfmc.) (stack based and timing resistant) */
-        #define USE_FAST_MATH
-        #define TFM_TIMING_RESISTANT
-    #else
-        /* normal heap based integer.c (not timing resistant) */
-        #define USE_INTEGER_HEAP_MATH
-    #endif
 #endif
 
 /* ------------------------------------------------------------------------- */

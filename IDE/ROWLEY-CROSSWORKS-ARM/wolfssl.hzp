@@ -74,7 +74,6 @@
           <file file_name="../../wolfcrypt/src/kdf.c" />
           <file file_name="../../wolfcrypt/src/hmac.c" />
           <file file_name="../../wolfcrypt/src/include.am" />
-          <file file_name="../../wolfcrypt/src/integer.c" />
           <file file_name="../../wolfcrypt/src/logging.c" />
           <file file_name="../../wolfcrypt/src/md2.c" />
           <file file_name="../../wolfcrypt/src/md4.c" />

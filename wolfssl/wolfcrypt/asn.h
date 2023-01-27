@@ -43,7 +43,6 @@ that can be serialized and deserialized in a cross-platform way.
     #define NO_ASN_TIME /* backwards compatibility with NO_TIME_H */
 #endif
 
-#include <wolfssl/wolfcrypt/integer.h>
 
 /* fips declare of RsaPrivateKeyDecode @wc_fips */
 #if defined(HAVE_FIPS) && !defined(NO_RSA) && \

@@ -30,7 +30,6 @@
 
 #ifndef NO_DSA
 
-#include <wolfssl/wolfcrypt/integer.h>
 #include <wolfssl/wolfcrypt/random.h>
 
 /* for DSA reverse compatibility */

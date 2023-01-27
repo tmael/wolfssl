@@ -27,6 +27,11 @@
 #define WOLF_CRYPT_DH_H
 
 #include <wolfssl/wolfcrypt/types.h>
+#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
+    #include <wolfssl/wolfcrypt/sp_int.h>
+#elif defined(USE_FAST_MATH)
+    #include <wolfssl/wolfcrypt/tfm.h>
+#endif /* USE_FAST_MATH */
 
 #ifndef NO_DH
 
@@ -35,7 +40,6 @@
     #include <wolfssl/wolfcrypt/fips.h>
 #endif /* HAVE_FIPS_VERSION >= 2 */
 
-#include <wolfssl/wolfcrypt/integer.h>
 #include <wolfssl/wolfcrypt/random.h>
 
 #ifdef WOLFSSL_KCAPI_DH

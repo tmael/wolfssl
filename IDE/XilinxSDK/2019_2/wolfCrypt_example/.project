@@ -521,11 +521,6 @@
 			<locationURI>PARENT-4-PROJECT_LOC/wolfcrypt/src/include.am</locationURI>
 		</link>
 		<link>
-			<name>src/wolfcrypt/src/integer.c</name>
-			<type>1</type>
-			<locationURI>PARENT-4-PROJECT_LOC/wolfcrypt/src/integer.c</locationURI>
-		</link>
-		<link>
 			<name>src/wolfcrypt/src/logging.c</name>
 			<type>1</type>
 			<locationURI>PARENT-4-PROJECT_LOC/wolfcrypt/src/logging.c</locationURI>

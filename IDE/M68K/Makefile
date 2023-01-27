@@ -13,7 +13,6 @@ CSRCS := ../../wolfcrypt/src/rsa.c \
         ../../wolfcrypt/src/sha.c \
         ../../wolfcrypt/src/sha256.c \
         ../../wolfcrypt/src/sha512.c \
-        ../../wolfcrypt/src/integer.c \
         ../../wolfcrypt/src/tfm.c \
         ../../wolfcrypt/src/random.c \
         ../../wolfcrypt/src/logging.c \

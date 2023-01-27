@@ -62,9 +62,7 @@
 #include <wolfssl/wolfcrypt/siphash.h>
 #endif
 #include <wolfssl/wolfcrypt/arc4.h>
-#if defined(WC_NO_RNG)
-    #include <wolfssl/wolfcrypt/integer.h>
-#else
+#if !defined(WC_NO_RNG)
     #include <wolfssl/wolfcrypt/random.h>
 #endif
 #include <wolfssl/wolfcrypt/coding.h>

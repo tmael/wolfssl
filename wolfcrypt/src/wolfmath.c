@@ -28,13 +28,16 @@
 
 /* in case user set USE_FAST_MATH there */
 #include <wolfssl/wolfcrypt/settings.h>
-
-#include <wolfssl/wolfcrypt/integer.h>
+#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
+    #include <wolfssl/wolfcrypt/sp_int.h>
+#elif defined(USE_FAST_MATH)
+    #include <wolfssl/wolfcrypt/tfm.h>
+#endif /* USE_FAST_MATH */
 
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/logging.h>
 
-#if defined(USE_FAST_MATH) || !defined(NO_BIG_INT)
+#if defined(USE_FAST_MATH) || defined(WOLFSSL_SP_MATH_ALL)
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     #include <wolfssl/wolfcrypt/async.h>
@@ -167,9 +170,6 @@ int mp_rand(mp_int* a, int digits, WC_RNG* rng)
 {
     int ret = 0;
     int cnt = digits * sizeof(mp_digit);
-#ifdef USE_INTEGER_HEAP_MATH
-    int i;
-#endif
 
     if (rng == NULL) {
         ret = MISSING_RNG_E;
@@ -178,12 +178,6 @@ int mp_rand(mp_int* a, int digits, WC_RNG* rng)
         ret = BAD_FUNC_ARG;
     }
 
-#ifdef USE_INTEGER_HEAP_MATH
-    /* allocate space for digits */
-    if (ret == MP_OKAY) {
-        ret = mp_set_bit(a, digits * DIGIT_BIT - 1);
-    }
-#else
 #if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
     if ((ret == MP_OKAY) && (digits > a->size))
 #else
@@ -195,24 +189,14 @@ int mp_rand(mp_int* a, int digits, WC_RNG* rng)
     if (ret == MP_OKAY) {
         a->used = digits;
     }
-#endif
     /* fill the data with random bytes */
     if (ret == MP_OKAY) {
         ret = wc_RNG_GenerateBlock(rng, (byte*)a->dp, cnt);
     }
     if (ret == MP_OKAY) {
-#ifdef USE_INTEGER_HEAP_MATH
-        /* Mask down each digit to only bits used */
-        for (i = 0; i < a->used; i++) {
-            a->dp[i] &= MP_MASK;
-        }
-#endif
         /* ensure top digit is not zero */
         while ((ret == MP_OKAY) && (a->dp[a->used - 1] == 0)) {
             ret = get_rand_digit(rng, &a->dp[a->used - 1]);
-#ifdef USE_INTEGER_HEAP_MATH
-            a->dp[a->used - 1] &= MP_MASK;
-#endif
         }
     }
 
@@ -418,4 +402,4 @@ int wc_bigint_to_mp(WC_BIGINT* src, mp_int* dst)
 }
 #endif /* HAVE_WOLF_BIGINT */
 
-#endif /* USE_FAST_MATH || !NO_BIG_INT */
+#endif /* USE_FAST_MATH */

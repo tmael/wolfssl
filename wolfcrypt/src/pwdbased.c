@@ -31,9 +31,12 @@
 #include <wolfssl/wolfcrypt/pwdbased.h>
 #include <wolfssl/wolfcrypt/hmac.h>
 #include <wolfssl/wolfcrypt/hash.h>
-#include <wolfssl/wolfcrypt/integer.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
-
+#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
+    #include <wolfssl/wolfcrypt/sp_int.h>
+#elif defined(USE_FAST_MATH)
+    #include <wolfssl/wolfcrypt/tfm.h>
+#endif /* USE_FAST_MATH */
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else

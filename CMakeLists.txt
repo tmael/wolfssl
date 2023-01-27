@@ -403,8 +403,6 @@ endif()
 
 # TODO: - IPv6 test apps
 
-set(WOLFSSL_SLOW_MATH "yes")
-
 # liboqs
 add_option(WOLFSSL_OQS
     "Enable integration with the OQS (Open Quantum Safe) liboqs library (default: disabled)"
@@ -962,18 +960,12 @@ add_option("WOLFSSL_ASN"
 
 if(NOT WOLFSSL_ASN)
     list(APPEND WOLFSSL_DEFINITIONS "-DNO_ASN" "-DNO_CERTS")
-
-    if(NOT WOLFSSL_DH AND NOT WOLFSSL_ECC)
-        # DH and ECC need bigint
-        list(APPEND WOLFSSL_DEFINITIONS "-DNO_BIG_INT")
-    endif()
 else()
     # turn off ASN if leanpsk on
     if(WOLFSSL_LEAN_PSK)
         list(APPEND WOLFSSL_DEFINITIONS
             "-DNO_ASN"
-            "-DNO_CERTS"
-            "-DNO_BIG_INT")
+            "-DNO_CERTS")
         override_cache(WOLFSSL_ASN "no")
     else()
         if("${WOLFSSL_ASN}" STREQUAL "nocrypt")

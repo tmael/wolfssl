@@ -107,7 +107,6 @@ mkdir -p $RPM_BUILD_ROOT/
 %{_includedir}/cyassl/ctaocrypt/error-crypt.h
 %{_includedir}/cyassl/ctaocrypt/fips_test.h
 %{_includedir}/cyassl/ctaocrypt/hmac.h
-%{_includedir}/cyassl/ctaocrypt/integer.h
 %{_includedir}/cyassl/ctaocrypt/logging.h
 %{_includedir}/cyassl/ctaocrypt/md2.h
 %{_includedir}/cyassl/ctaocrypt/md4.h
@@ -282,7 +281,6 @@ mkdir -p $RPM_BUILD_ROOT/
 %{_includedir}/wolfssl/wolfcrypt/ge_operations.h
 %{_includedir}/wolfssl/wolfcrypt/hash.h
 %{_includedir}/wolfssl/wolfcrypt/hmac.h
-%{_includedir}/wolfssl/wolfcrypt/integer.h
 %{_includedir}/wolfssl/wolfcrypt/kdf.h
 %{_includedir}/wolfssl/wolfcrypt/kyber.h
 %{_includedir}/wolfssl/wolfcrypt/logging.h

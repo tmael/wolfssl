@@ -71,7 +71,6 @@
 		A4ADF8F81FCE0C5600A06E90 /* fe_low_mem.c in Sources */ = {isa = PBXBuildFile; fileRef = A4ADF89C1FCE0C4F00A06E90 /* fe_low_mem.c */; };
 		A4ADF8FA1FCE0C5600A06E90 /* pkcs12.c in Sources */ = {isa = PBXBuildFile; fileRef = A4ADF89E1FCE0C4F00A06E90 /* pkcs12.c */; };
 		A4ADF8FC1FCE0C5600A06E90 /* asm.c in Sources */ = {isa = PBXBuildFile; fileRef = A4ADF8A01FCE0C4F00A06E90 /* asm.c */; };
-		A4ADF8FE1FCE0C5600A06E90 /* integer.c in Sources */ = {isa = PBXBuildFile; fileRef = A4ADF8A21FCE0C5000A06E90 /* integer.c */; };
 		A4ADF9001FCE0C5600A06E90 /* poly1305.c in Sources */ = {isa = PBXBuildFile; fileRef = A4ADF8A41FCE0C5000A06E90 /* poly1305.c */; };
 		A4ADF9011FCE0C5600A06E90 /* md2.c in Sources */ = {isa = PBXBuildFile; fileRef = A4ADF8A51FCE0C5000A06E90 /* md2.c */; };
 		A4ADF9041FCE0C5600A06E90 /* des3.c in Sources */ = {isa = PBXBuildFile; fileRef = A4ADF8A81FCE0C5000A06E90 /* des3.c */; };
@@ -176,7 +175,6 @@
 		A4ADF89C1FCE0C4F00A06E90 /* fe_low_mem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fe_low_mem.c; path = ../../../wolfcrypt/src/fe_low_mem.c; sourceTree = "<group>"; };
 		A4ADF89E1FCE0C4F00A06E90 /* pkcs12.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pkcs12.c; path = ../../../wolfcrypt/src/pkcs12.c; sourceTree = "<group>"; };
 		A4ADF8A01FCE0C4F00A06E90 /* asm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = asm.c; path = ../../../wolfcrypt/src/asm.c; sourceTree = "<group>"; };
-		A4ADF8A21FCE0C5000A06E90 /* integer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = integer.c; path = ../../../wolfcrypt/src/integer.c; sourceTree = "<group>"; };
 		A4ADF8A41FCE0C5000A06E90 /* poly1305.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = poly1305.c; path = ../../../wolfcrypt/src/poly1305.c; sourceTree = "<group>"; };
 		A4ADF8A51FCE0C5000A06E90 /* md2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = md2.c; path = ../../../wolfcrypt/src/md2.c; sourceTree = "<group>"; };
 		A4ADF8A81FCE0C5000A06E90 /* des3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = des3.c; path = ../../../wolfcrypt/src/des3.c; sourceTree = "<group>"; };
@@ -322,7 +320,6 @@
 				A4ADF88E1FCE0C4E00A06E90 /* ge_operations.c */,
 				A4ADF89A1FCE0C4F00A06E90 /* hash.c */,
 				A4ADF8751FCE0C4C00A06E90 /* hmac.c */,
-				A4ADF8A21FCE0C5000A06E90 /* integer.c */,
 				9D2E31E8291CE5CB0082B941 /* kdf.c */,
 				A4ADF8AF1FCE0C5100A06E90 /* logging.c */,
 				A4ADF8A51FCE0C5000A06E90 /* md2.c */,
@@ -462,7 +459,6 @@
 				A4ADF8721FCE0C1C00A06E90 /* crl.c in Sources */,
 				A4ADF91B1FCE0C5600A06E90 /* srp.c in Sources */,
 				A46FE16F2493E8F800A25BE7 /* armv8-chacha.c in Sources */,
-				A4ADF8FE1FCE0C5600A06E90 /* integer.c in Sources */,
 				9D2E31E5291CE4800082B941 /* dtls.c in Sources */,
 				A4ADF9231FCE0C5600A06E90 /* camellia.c in Sources */,
 				A4ADF8321FCE0BD300A06E90 /* ViewController.m in Sources */,

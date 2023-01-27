@@ -641,11 +641,6 @@
 			<locationURI>PARENT-3-WORKSPACE_LOC/wolfssl/wolfcrypt/include.am</locationURI>
 		</link>
 		<link>
-			<name>inc/wolfssl/wolfcrypt/integer.h</name>
-			<type>1</type>
-			<locationURI>PARENT-3-WORKSPACE_LOC/wolfssl/wolfcrypt/integer.h</locationURI>
-		</link>
-		<link>
 			<name>inc/wolfssl/wolfcrypt/kdf.h</name>
 			<type>1</type>
 			<locationURI>PARENT-3-WORKSPACE_LOC/wolfssl/wolfcrypt/kdf.h</locationURI>
@@ -1199,11 +1194,6 @@
 			<name>src/wolfcrypt/src/hmac.c</name>
 			<type>1</type>
 			<locationURI>PARENT-3-WORKSPACE_LOC/wolfcrypt/src/hmac.c</locationURI>
-		</link>
-		<link>
-			<name>src/wolfcrypt/src/integer.c</name>
-			<type>1</type>
-			<locationURI>PARENT-3-WORKSPACE_LOC/wolfcrypt/src/integer.c</locationURI>
 		</link>
 		<link>
 			<name>src/wolfcrypt/src/kdf.c</name>

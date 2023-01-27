@@ -71,7 +71,11 @@ RSA keys can be used to encrypt, decrypt, sign and verify data.
     #define WOLFSSL_KEY_GEN
 #endif
 #else
-    #include <wolfssl/wolfcrypt/integer.h>
+#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
+    #include <wolfssl/wolfcrypt/sp_int.h>
+#elif defined(USE_FAST_MATH)
+    #include <wolfssl/wolfcrypt/tfm.h>
+#endif /* USE_FAST_MATH */
     #include <wolfssl/wolfcrypt/random.h>
 #endif /* HAVE_FIPS && HAVE_FIPS_VERION 1 */
 #if defined(HAVE_FIPS) && \

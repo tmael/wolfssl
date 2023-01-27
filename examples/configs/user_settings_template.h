@@ -66,8 +66,6 @@ extern "C" {
     /* fast math (tfmc.) (stack based and timing resistant) */
     #define USE_FAST_MATH
     #define TFM_TIMING_RESISTANT
-#else
-    /* normal heap based integer.c (not timing resistant) */
 #endif
 
 /* Wolf Single Precision Math */
@@ -80,7 +78,7 @@ extern "C" {
     //#define WOLFSSL_SP_384 /* Enable ECC 384-bit SECP384R1 support */
 
     //#define WOLFSSL_SP_CACHE_RESISTANT
-    #define WOLFSSL_SP_MATH     /* only SP math - disables integer.c/tfm.c */
+    #define WOLFSSL_SP_MATH     /* only SP math - disables tfm.c */
     #define WOLFSSL_SP_MATH_ALL /* use SP math for all key sizes and curves */
 
     //#define WOLFSSL_SP_NO_MALLOC

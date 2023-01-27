@@ -27,7 +27,6 @@
 
 #include <wolfssl/wolfcrypt/rsa.h>
 /* includes for their compatibility */
-#include <cyassl/ctaocrypt/integer.h>
 #include <cyassl/ctaocrypt/random.h>
 #include <cyassl/ctaocrypt/settings.h>
 

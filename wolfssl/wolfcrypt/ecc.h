@@ -36,7 +36,11 @@
     #include <wolfssl/wolfcrypt/fips.h>
 #endif /* HAVE_FIPS_VERSION >= 2 */
 
-#include <wolfssl/wolfcrypt/integer.h>
+#if defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)
+    #include <wolfssl/wolfcrypt/sp_int.h>
+#elif defined(USE_FAST_MATH)
+    #include <wolfssl/wolfcrypt/tfm.h>
+#endif /* USE_FAST_MATH */
 #include <wolfssl/wolfcrypt/random.h>
 
 #ifdef HAVE_X963_KDF

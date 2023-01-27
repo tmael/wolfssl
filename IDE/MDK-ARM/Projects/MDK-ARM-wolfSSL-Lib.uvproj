@@ -517,11 +517,6 @@
               <FilePath>..\..\..\wolfcrypt\src\hmac.c</FilePath>
             </File>
             <File>
-              <FileName>integer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\wolfcrypt\src\integer.c</FilePath>
-            </File>
-            <File>
               <FileName>logging.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\wolfcrypt\src\logging.c</FilePath>
@@ -1221,11 +1216,6 @@
               <FilePath>..\..\..\wolfcrypt\src\hmac.c</FilePath>
             </File>
             <File>
-              <FileName>integer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\wolfcrypt\src\integer.c</FilePath>
-            </File>
-            <File>
               <FileName>logging.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\wolfcrypt\src\logging.c</FilePath>
@@ -1923,11 +1913,6 @@
               <FileName>hmac.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\wolfcrypt\src\hmac.c</FilePath>
-            </File>
-            <File>
-              <FileName>integer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\wolfcrypt\src\integer.c</FilePath>
             </File>
             <File>
               <FileName>logging.c</FileName>

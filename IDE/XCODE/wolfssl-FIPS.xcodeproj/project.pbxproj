@@ -28,7 +28,6 @@
 		5216463C1A8992CC0062516A /* ecc.c in Sources */ = {isa = PBXBuildFile; fileRef = 5216461B1A8992CC0062516A /* ecc.c */; };
 		5216463D1A8992CC0062516A /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = 5216461C1A8992CC0062516A /* error.c */; };
 		5216463F1A8992CC0062516A /* hmac.c in Sources */ = {isa = PBXBuildFile; fileRef = 5216461E1A8992CC0062516A /* hmac.c */; };
-		521646401A8992CC0062516A /* integer.c in Sources */ = {isa = PBXBuildFile; fileRef = 5216461F1A8992CC0062516A /* integer.c */; };
 		521646411A8992CC0062516A /* logging.c in Sources */ = {isa = PBXBuildFile; fileRef = 521646201A8992CC0062516A /* logging.c */; };
 		521646421A8992CC0062516A /* md2.c in Sources */ = {isa = PBXBuildFile; fileRef = 521646211A8992CC0062516A /* md2.c */; };
 		521646431A8992CC0062516A /* md4.c in Sources */ = {isa = PBXBuildFile; fileRef = 521646221A8992CC0062516A /* md4.c */; };
@@ -73,7 +72,6 @@
 		521646DC1A8A7FF30062516A /* error-crypt.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5216466D1A8993770062516A /* error-crypt.h */; };
 		521646DD1A8A7FF30062516A /* fips_test.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5216466E1A8993770062516A /* fips_test.h */; };
 		521646DF1A8A7FF30062516A /* hmac.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646701A8993770062516A /* hmac.h */; };
-		521646E01A8A7FF30062516A /* integer.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646721A8993770062516A /* integer.h */; };
 		521646E11A8A7FF30062516A /* logging.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646731A8993770062516A /* logging.h */; };
 		521646E21A8A7FF30062516A /* md2.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646741A8993770062516A /* md2.h */; };
 		521646E31A8A7FF30062516A /* md4.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646751A8993770062516A /* md4.h */; };
@@ -123,7 +121,6 @@
 		521647101A8A80100062516A /* error-crypt.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A41A8993F50062516A /* error-crypt.h */; };
 		521647111A8A80100062516A /* fips_test.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A51A8993F50062516A /* fips_test.h */; };
 		521647131A8A80100062516A /* hmac.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A71A8993F50062516A /* hmac.h */; };
-		521647141A8A80100062516A /* integer.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A81A8993F50062516A /* integer.h */; };
 		521647151A8A80100062516A /* logging.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A91A8993F50062516A /* logging.h */; };
 		521647161A8A80100062516A /* md2.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646AA1A8993F50062516A /* md2.h */; };
 		521647171A8A80100062516A /* md4.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646AB1A8993F50062516A /* md4.h */; };
@@ -220,7 +217,6 @@
 		A4A54E251BC5C3E0002866CD /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = 5216461C1A8992CC0062516A /* error.c */; };
 		A4A54E261BC5C3E0002866CD /* hmac.c in Sources */ = {isa = PBXBuildFile; fileRef = 5216461E1A8992CC0062516A /* hmac.c */; };
 		A4A54E271BC5C3E0002866CD /* arc4.c in Sources */ = {isa = PBXBuildFile; fileRef = 521646121A8992CC0062516A /* arc4.c */; };
-		A4A54E281BC5C3E0002866CD /* integer.c in Sources */ = {isa = PBXBuildFile; fileRef = 5216461F1A8992CC0062516A /* integer.c */; };
 		A4A54E291BC5C3E0002866CD /* internal.c in Sources */ = {isa = PBXBuildFile; fileRef = 521646021A89928E0062516A /* internal.c */; };
 		A4A54E2A1BC5C3E0002866CD /* wolfio.c in Sources */ = {isa = PBXBuildFile; fileRef = 521646031A89928E0062516A /* wolfio.c */; };
 		A4A54E2B1BC5C3E0002866CD /* tfm.c in Sources */ = {isa = PBXBuildFile; fileRef = 521646301A8992CC0062516A /* tfm.c */; };
@@ -255,7 +251,6 @@
 		A4A54E4B1BC5C3E0002866CD /* error-crypt.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5216466D1A8993770062516A /* error-crypt.h */; };
 		A4A54E4C1BC5C3E0002866CD /* fips_test.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5216466E1A8993770062516A /* fips_test.h */; };
 		A4A54E4E1BC5C3E0002866CD /* hmac.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646701A8993770062516A /* hmac.h */; };
-		A4A54E4F1BC5C3E0002866CD /* integer.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646721A8993770062516A /* integer.h */; };
 		A4A54E501BC5C3E0002866CD /* logging.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646731A8993770062516A /* logging.h */; };
 		A4A54E511BC5C3E0002866CD /* md2.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646741A8993770062516A /* md2.h */; };
 		A4A54E521BC5C3E0002866CD /* md4.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646751A8993770062516A /* md4.h */; };
@@ -305,7 +300,6 @@
 		A4A54E811BC5C3E0002866CD /* error-crypt.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A41A8993F50062516A /* error-crypt.h */; };
 		A4A54E821BC5C3E0002866CD /* fips_test.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A51A8993F50062516A /* fips_test.h */; };
 		A4A54E841BC5C3E0002866CD /* hmac.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A71A8993F50062516A /* hmac.h */; };
-		A4A54E851BC5C3E0002866CD /* integer.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A81A8993F50062516A /* integer.h */; };
 		A4A54E861BC5C3E0002866CD /* logging.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646A91A8993F50062516A /* logging.h */; };
 		A4A54E871BC5C3E0002866CD /* md2.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646AA1A8993F50062516A /* md2.h */; };
 		A4A54E881BC5C3E0002866CD /* md4.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 521646AB1A8993F50062516A /* md4.h */; };
@@ -358,7 +352,6 @@
 				521646DC1A8A7FF30062516A /* error-crypt.h in CopyFiles */,
 				521646DD1A8A7FF30062516A /* fips_test.h in CopyFiles */,
 				521646DF1A8A7FF30062516A /* hmac.h in CopyFiles */,
-				521646E01A8A7FF30062516A /* integer.h in CopyFiles */,
 				521646E11A8A7FF30062516A /* logging.h in CopyFiles */,
 				521646E21A8A7FF30062516A /* md2.h in CopyFiles */,
 				521646E31A8A7FF30062516A /* md4.h in CopyFiles */,
@@ -426,7 +419,6 @@
 				521647101A8A80100062516A /* error-crypt.h in CopyFiles */,
 				521647111A8A80100062516A /* fips_test.h in CopyFiles */,
 				521647131A8A80100062516A /* hmac.h in CopyFiles */,
-				521647141A8A80100062516A /* integer.h in CopyFiles */,
 				521647151A8A80100062516A /* logging.h in CopyFiles */,
 				521647161A8A80100062516A /* md2.h in CopyFiles */,
 				521647171A8A80100062516A /* md4.h in CopyFiles */,
@@ -515,7 +507,6 @@
 				A4A54E4B1BC5C3E0002866CD /* error-crypt.h in CopyFiles */,
 				A4A54E4C1BC5C3E0002866CD /* fips_test.h in CopyFiles */,
 				A4A54E4E1BC5C3E0002866CD /* hmac.h in CopyFiles */,
-				A4A54E4F1BC5C3E0002866CD /* integer.h in CopyFiles */,
 				A4A54E501BC5C3E0002866CD /* logging.h in CopyFiles */,
 				A4A54E511BC5C3E0002866CD /* md2.h in CopyFiles */,
 				A4A54E521BC5C3E0002866CD /* md4.h in CopyFiles */,
@@ -583,7 +574,6 @@
 				A4A54E811BC5C3E0002866CD /* error-crypt.h in CopyFiles */,
 				A4A54E821BC5C3E0002866CD /* fips_test.h in CopyFiles */,
 				A4A54E841BC5C3E0002866CD /* hmac.h in CopyFiles */,
-				A4A54E851BC5C3E0002866CD /* integer.h in CopyFiles */,
 				A4A54E861BC5C3E0002866CD /* logging.h in CopyFiles */,
 				A4A54E871BC5C3E0002866CD /* md2.h in CopyFiles */,
 				A4A54E881BC5C3E0002866CD /* md4.h in CopyFiles */,
@@ -634,7 +624,6 @@
 		5216461B1A8992CC0062516A /* ecc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ecc.c; path = ../../wolfcrypt/src/ecc.c; sourceTree = SOURCE_ROOT; };
 		5216461C1A8992CC0062516A /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = ../../wolfcrypt/src/error.c; sourceTree = SOURCE_ROOT; };
 		5216461E1A8992CC0062516A /* hmac.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hmac.c; path = ../../wolfcrypt/src/hmac.c; sourceTree = SOURCE_ROOT; };
-		5216461F1A8992CC0062516A /* integer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = integer.c; path = ../../wolfcrypt/src/integer.c; sourceTree = SOURCE_ROOT; };
 		521646201A8992CC0062516A /* logging.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = logging.c; path = ../../wolfcrypt/src/logging.c; sourceTree = SOURCE_ROOT; };
 		521646211A8992CC0062516A /* md2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = md2.c; path = ../../wolfcrypt/src/md2.c; sourceTree = SOURCE_ROOT; };
 		521646221A8992CC0062516A /* md4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = md4.c; path = ../../wolfcrypt/src/md4.c; sourceTree = SOURCE_ROOT; };
@@ -679,7 +668,6 @@
 		5216466D1A8993770062516A /* error-crypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "error-crypt.h"; path = "../../wolfssl/wolfcrypt/error-crypt.h"; sourceTree = "<group>"; };
 		5216466E1A8993770062516A /* fips_test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = fips_test.h; path = ../../wolfssl/wolfcrypt/fips_test.h; sourceTree = "<group>"; };
 		521646701A8993770062516A /* hmac.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hmac.h; path = ../../wolfssl/wolfcrypt/hmac.h; sourceTree = "<group>"; };
-		521646721A8993770062516A /* integer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = integer.h; path = ../../wolfssl/wolfcrypt/integer.h; sourceTree = "<group>"; };
 		521646731A8993770062516A /* logging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = logging.h; path = ../../wolfssl/wolfcrypt/logging.h; sourceTree = "<group>"; };
 		521646741A8993770062516A /* md2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = md2.h; path = ../../wolfssl/wolfcrypt/md2.h; sourceTree = "<group>"; };
 		521646751A8993770062516A /* md4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = md4.h; path = ../../wolfssl/wolfcrypt/md4.h; sourceTree = "<group>"; };
@@ -729,7 +717,6 @@
 		521646A41A8993F50062516A /* error-crypt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "error-crypt.h"; path = "../../cyassl/ctaocrypt/error-crypt.h"; sourceTree = "<group>"; };
 		521646A51A8993F50062516A /* fips_test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = fips_test.h; path = ../../cyassl/ctaocrypt/fips_test.h; sourceTree = "<group>"; };
 		521646A71A8993F50062516A /* hmac.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hmac.h; path = ../../cyassl/ctaocrypt/hmac.h; sourceTree = "<group>"; };
-		521646A81A8993F50062516A /* integer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = integer.h; path = ../../cyassl/ctaocrypt/integer.h; sourceTree = "<group>"; };
 		521646A91A8993F50062516A /* logging.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = logging.h; path = ../../cyassl/ctaocrypt/logging.h; sourceTree = "<group>"; };
 		521646AA1A8993F50062516A /* md2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = md2.h; path = ../../cyassl/ctaocrypt/md2.h; sourceTree = "<group>"; };
 		521646AB1A8993F50062516A /* md4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = md4.h; path = ../../cyassl/ctaocrypt/md4.h; sourceTree = "<group>"; };
@@ -830,7 +817,6 @@
 				521646A41A8993F50062516A /* error-crypt.h */,
 				521646A51A8993F50062516A /* fips_test.h */,
 				521646A71A8993F50062516A /* hmac.h */,
-				521646A81A8993F50062516A /* integer.h */,
 				521646A91A8993F50062516A /* logging.h */,
 				521646AA1A8993F50062516A /* md2.h */,
 				521646AB1A8993F50062516A /* md4.h */,
@@ -897,7 +883,6 @@
 				525BE5BB1B3885580054BBCD /* hash.h */,
 				521646701A8993770062516A /* hmac.h */,
 				6AC8513A272CB01200F2B32A /* kdf.h */,
-				521646721A8993770062516A /* integer.h */,
 				521646731A8993770062516A /* logging.h */,
 				521646741A8993770062516A /* md2.h */,
 				521646751A8993770062516A /* md4.h */,
@@ -970,7 +955,6 @@
 				525BE5B91B38853E0054BBCD /* hash.c */,
 				5216461E1A8992CC0062516A /* hmac.c */,
 				6AC85135272CAFEC00F2B32A /* kdf.c */,
-				5216461F1A8992CC0062516A /* integer.c */,
 				521646201A8992CC0062516A /* logging.c */,
 				521646211A8992CC0062516A /* md2.c */,
 				521646221A8992CC0062516A /* md4.c */,
@@ -1177,7 +1161,6 @@
 				5216463D1A8992CC0062516A /* error.c in Sources */,
 				5216463F1A8992CC0062516A /* hmac.c in Sources */,
 				521646331A8992CC0062516A /* arc4.c in Sources */,
-				521646401A8992CC0062516A /* integer.c in Sources */,
 				5216460A1A89928E0062516A /* internal.c in Sources */,
 				5216460B1A89928E0062516A /* wolfio.c in Sources */,
 				521646511A8992CC0062516A /* tfm.c in Sources */,
@@ -1242,7 +1225,6 @@
 				A4A54E251BC5C3E0002866CD /* error.c in Sources */,
 				A4A54E261BC5C3E0002866CD /* hmac.c in Sources */,
 				A4A54E271BC5C3E0002866CD /* arc4.c in Sources */,
-				A4A54E281BC5C3E0002866CD /* integer.c in Sources */,
 				A4A54E291BC5C3E0002866CD /* internal.c in Sources */,
 				A4A54E2A1BC5C3E0002866CD /* wolfio.c in Sources */,
 				A4A54E2B1BC5C3E0002866CD /* tfm.c in Sources */,

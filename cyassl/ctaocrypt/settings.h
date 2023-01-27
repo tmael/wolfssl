@@ -163,7 +163,6 @@
 
     #define CYASSL_AES_COUNTER
     #define HAVE_AESGCM
-    #define NO_BIG_INT
 #endif
 
 #ifdef MICROCHIP_TCPIP_V5
@@ -206,7 +205,6 @@
     #define HAVE_NULL_CIPHER
     #define NO_OLD_TLS
     #define NO_ASN
-    #define NO_BIG_INT
     #define NO_RSA
     #define NO_DSA
     #define NO_DH

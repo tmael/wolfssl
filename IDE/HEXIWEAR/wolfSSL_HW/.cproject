@@ -114,7 +114,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="wolfcrypt/src/integer.c|wolfcrypt/src/misc.c|src/bio.c|wolfcrypt/src/evp.c|wolfcrypt/src/aes_asm.s|wolfcrypt/src/aes_asm.asm|SDK|wolfssl/wolfcrypt/port|wolfcrypt/src/port|wolfcrypt/user-crypto" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="wolfcrypt/src/misc.c|src/bio.c|wolfcrypt/src/evp.c|wolfcrypt/src/aes_asm.s|wolfcrypt/src/aes_asm.asm|SDK|wolfssl/wolfcrypt/port|wolfcrypt/src/port|wolfcrypt/user-crypto" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

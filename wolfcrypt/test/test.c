@@ -225,9 +225,7 @@
 #include <wolfssl/wolfcrypt/sha512.h>
 #include <wolfssl/wolfcrypt/rc2.h>
 #include <wolfssl/wolfcrypt/arc4.h>
-#if defined(WC_NO_RNG)
-    #include <wolfssl/wolfcrypt/integer.h>
-#else
+#if !defined(WC_NO_RNG)
     #include <wolfssl/wolfcrypt/random.h>
 #endif
 #include <wolfssl/wolfcrypt/coding.h>
@@ -788,20 +786,12 @@ options: [-s max_relative_stack_bytes] [-m max_relative_heap_memory_bytes]\n\
     wolfCrypt_SetCb_fips(myFipsCb);
 #endif
 
-#if !defined(NO_BIG_INT)
-    if (CheckCtcSettings() != 1) {
-        printf("Sizeof mismatch (build) %x != (run) %lx\n",
-               CTC_SETTINGS, (unsigned long)CheckRunTimeSettings());
-        return err_sys("Build vs runtime math mismatch\n", -1000);
-    }
-
 #if defined(USE_FAST_MATH) && \
         (!defined(NO_RSA) || !defined(NO_DH) || defined(HAVE_ECC))
     if (CheckFastMathSettings() != 1)
         return err_sys("Build vs runtime fastmath FP_MAX_BITS mismatch\n",
                        -1001);
 #endif /* USE_FAST_MATH */
-#endif /* !NO_BIG_INT */
 
 #if defined(WOLFSSL_CERT_GEN) && (!defined(NO_RSA) || defined(HAVE_ECC)) || \
   (defined(WOLFSSL_TEST_CERT) && (defined(HAVE_ED25519) || defined(HAVE_ED448)))

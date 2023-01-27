@@ -48,7 +48,6 @@
     <ClCompile Include="..\..\wolfcrypt\src\hash.c" />
     <ClCompile Include="..\..\wolfcrypt\src\kdf.c" />
     <ClCompile Include="..\..\wolfcrypt\src\hmac.c" />
-    <ClCompile Include="..\..\wolfcrypt\src\integer.c" />
     <ClCompile Include="..\..\wolfcrypt\src\logging.c" />
     <ClCompile Include="..\..\wolfcrypt\src\md2.c" />
     <ClCompile Include="..\..\wolfcrypt\src\md4.c" />
@@ -112,7 +111,6 @@
     <ClInclude Include="..\..\wolfssl\wolfcrypt\ge_operations.h" />
     <ClInclude Include="..\..\wolfssl\wolfcrypt\hash.h" />
     <ClInclude Include="..\..\wolfssl\wolfcrypt\hmac.h" />
-    <ClInclude Include="..\..\wolfssl\wolfcrypt\integer.h" />
     <ClInclude Include="..\..\wolfssl\wolfcrypt\logging.h" />
     <ClInclude Include="..\..\wolfssl\wolfcrypt\md2.h" />
     <ClInclude Include="..\..\wolfssl\wolfcrypt\md4.h" />

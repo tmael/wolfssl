@@ -32,7 +32,6 @@
 #include <wolfssl/wolfcrypt/sha.h>
 #include <wolfssl/wolfcrypt/sha256.h>
 #include <wolfssl/wolfcrypt/sha512.h>
-#include <wolfssl/wolfcrypt/integer.h>
 
 #ifdef __cplusplus
     extern "C" {
