@@ -37638,9 +37638,22 @@ int ParseCRL(RevokedCert* rcert, DecodedCRL* dcrl, const byte* buff, word32 sz,
     }
 
     WOLFSSL_MSG("Found CRL issuer CA");
-    ret = VerifyCRL_Signature(&sigCtx, buff + dcrl->certBegin,
-           dcrl->sigIndex - dcrl->certBegin, dcrl->signature, dcrl->sigLength,
-           dcrl->signatureOID, sigParams, sigParamsSz, ca, dcrl->heap);
+    if (verify == VERIFY_CRL_SKIP_SIGNATURE) {
+    #ifndef IGNORE_KEY_EXTENSIONS
+        if ((ca->keyUsage & KEYUSE_CRL_SIGN) == 0) {
+            WOLFSSL_MSG("CA cannot sign CRLs");
+            WOLFSSL_ERROR_VERBOSE(ASN_CRL_NO_SIGNER_E);
+            ret = ASN_CRL_NO_SIGNER_E;
+            goto end;
+        }
+    #endif /* IGNORE_KEY_EXTENSIONS */
+        WOLFSSL_MSG("Found CRL issuer CA but skipping signature check");
+    }
+    else {
+        ret = VerifyCRL_Signature(&sigCtx, buff + dcrl->certBegin,
+               dcrl->sigIndex - dcrl->certBegin, dcrl->signature, dcrl->sigLength,
+               dcrl->signatureOID, sigParams, sigParamsSz, ca, dcrl->heap);
+    }
 
 end:
     return ret;

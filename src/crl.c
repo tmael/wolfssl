@@ -288,6 +288,10 @@ static int FindRevokedSerial(RevokedCert* rc, byte* serial, int serialSz,
     int ret = 0;
     byte hash[SIGNER_DIGEST_SIZE];
 #ifdef CRL_STATIC_REVOKED_LIST
+    (void)hash;
+    (void)serialSz;
+    (void)serialHash;
+
     /* do binary search */
     int low, high, mid;
 
