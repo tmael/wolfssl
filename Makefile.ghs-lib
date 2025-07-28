@@ -1,0 +1,31 @@
+SRC_DIR := $(CURDIR)
+BUILD_DIR := build
+INCLUDES := -I$(SRC_DIR)
+DEFINES := -DWOLFSSL_USER_SETTINGS -DWOLFSSL_ARMARCH=7 -DWOLFSSL_ARMASM_INLINE -DWOLFSSL_ARMASM_NO_HW_CRYPTO -DGCM_TABLE_4BIT
+SRCS := $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-32-aes-asm_c.c \
+        $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-aes.c
+
+
+CC := /opt/ghs/comp_202354/ccarm
+AR := /opt/ghs/comp_202354/cxarm
+ARFLAGS := -archive
+
+CFLAGS := --gnu_asm --diag_suppress=1546 -Onone --no_debug -align8 -littleendian -preprocess_assembly_files -preprocess_special_assembly_files --preprocess_linker_directive_full -cpu=cortexa9 -dual_debug -paddr_offset=0 -Man -ga -e=GSBoot -ANSI --no_exceptions --slash_comment --disable_ctors_dtors -nostartfiles -malloc_version=legacy --C++14 $(DEFINES) $(INCLUDES)
+
+OBJ_DIR := $(BUILD_DIR)/ghs/obj
+LIB_DIR := $(BUILD_DIR)/ghs/lib
+OBJS := $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+LIB := $(LIB_DIR)/libwolfcrypt.a
+
+all: $(LIB)
+
+$(LIB): $(OBJS)
+	mkdir -p $(LIB_DIR)
+	$(AR) $(ARFLAGS) -o $@ $^
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+clean:
+	rm -rf $(BUILD_DIR)/ghs

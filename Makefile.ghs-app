@@ -1,0 +1,41 @@
+SRC_DIR := $(CURDIR)
+BUILD_DIR := build
+INCLUDES := -I$(SRC_DIR) -I
+DEFINES := -DWOLFSSL_USER_SETTINGS -DWOLFSSL_ARMARCH=7 -DWOLFSSL_ARMASM_INLINE -DWOLFSSL_ARMASM_NO_HW_CRYPTO -DGCM_TABLE_4BIT
+
+APP_SRC := $(SRC_DIR)/aesgcm-test.c
+OBJ_DIR := $(BUILD_DIR)/ghs/app/obj
+OUT_DIR := $(BUILD_DIR)/ghs/app/out
+APP_OBJ := $(OBJ_DIR)/aesgcm-test.r
+APP_ELF := $(OUT_DIR)/aesgcm-test.elf
+
+LIB_WOLF := $(BUILD_DIR)/ghs/lib/libwolfcrypt.a
+LIB_BSP := /home/tesfa/Workspace/GreenHills/Zynq/Output/Debug/Lib/BSP.a
+LIB_SYS := /home/tesfa/Workspace/GreenHills/Zynq/Output/Debug/Lib/libsys.a
+TOP_PROJECT := /home/tesfa/Workspace/GreenHills/Zynq/Zynq.gpj
+LD_SCRIPT_DIR := /home/tesfa/Workspace/GreenHills/Zynq/Projects/tgt
+LD_SCRIPT := $(LD_SCRIPT_DIR)/cpu0.ld
+
+CC := /opt/ghs/comp_202354/ccarm
+CFLAGS := -MD -c99 --c++14 \
+    --no_debug -Onone -dbg_source_root /home/tesfa/Software \
+    -align8 -littleendian --preprocess_linker_directive_full \
+    -cpu=cortexa9 -dual_debug -paddr_offset=0 -Man -ga -e=GSBoot \
+    --no_exceptions --slash_comment --disable_ctors_dtors \
+    -lnk=-mapfile_type=2 -lnk=-nosegments_always_executable \
+    -nostartfiles -malloc_version=legacy \
+    -object_dir=$(OBJ_DIR) -lsys \
+    $(DEFINES) $(INCLUDES)
+
+all: $(APP_ELF)
+
+$(APP_ELF): $(APP_OBJ)
+	mkdir -p $(OUT_DIR)
+	$(CC) $(CFLAGS) $(APP_OBJ) $(LIB_WOLF) $(LIB_BSP) $(LIB_SYS) -top_project $(TOP_PROJECT) $(LD_SCRIPT) -I$(LD_SCRIPT_DIR) -o $@
+
+$(APP_OBJ): $(APP_SRC)
+	mkdir -p $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -rf $(BUILD_DIR)/ghs/app

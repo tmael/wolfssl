@@ -1,0 +1,28 @@
+SRC_DIR := $(CURDIR)
+BUILD_DIR := build
+INCLUDES := -I$(SRC_DIR)
+DEFINES := -DWOLFSSL_USER_SETTINGS -DWOLFSSL_ARMARCH=7 -DWOLFSSL_ARMASM_INLINE -DWOLFSSL_ARMASM_NO_HW_CRYPTO -DGCM_TABLE_4BIT
+SRCS := $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-32-aes-asm_c.c \
+        $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-aes.c
+
+CC := arm-linux-gnueabihf-gcc
+AR := arm-linux-gnueabihf-ar
+CFLAGS := -Wall -O2 -g -marm -march=armv7-a -mfloat-abi=hard -mfpu=neon $(DEFINES) $(INCLUDES)
+
+OBJ_DIR := $(BUILD_DIR)/gcc/obj
+LIB_DIR := $(BUILD_DIR)/gcc/lib
+OBJS := $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+LIB := $(LIB_DIR)/libwolfcrypt.a
+
+all: $(LIB)
+
+$(LIB): $(OBJS)
+	mkdir -p $(LIB_DIR)
+	$(AR) rcs $@ $^
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -rf $(BUILD_DIR)/gcc

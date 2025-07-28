@@ -209,7 +209,7 @@ enum {
     CCM_NONCE_MIN_SZ = 7,
     CCM_NONCE_MAX_SZ = 13,
     CTR_SZ   = 4,
-    AES_IV_FIXED_SZ = 4,
+    AES_IV_FIXED_SZ = 4 WC_ENUM_TERMINATOR
 #ifdef WOLFSSL_AES_CFB
     AES_CFB_MODE = 1,
 #endif
