@@ -5,12 +5,15 @@ DEFINES := -DWOLFSSL_USER_SETTINGS -DWOLFSSL_ARMARCH=7 -DWOLFSSL_ARMASM_INLINE -
 SRCS := $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-32-aes-asm_c.c \
         $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-aes.c
 
+DEBUG_OPT := -G -Omaxdebug
+RELEASE_OPT := -Onone --no_debug
+WOLFSSL_OPT := --gnu_asm --diag_suppress=1546
 
 CC := /opt/ghs/comp_202354/ccarm
 AR := /opt/ghs/comp_202354/cxarm
 ARFLAGS := -archive
 
-CFLAGS := --gnu_asm --diag_suppress=1546 -Onone --no_debug -align8 -littleendian -preprocess_assembly_files -preprocess_special_assembly_files --preprocess_linker_directive_full -cpu=cortexa9 -dual_debug -paddr_offset=0 -Man -ga -e=GSBoot -ANSI --no_exceptions --slash_comment --disable_ctors_dtors -nostartfiles -malloc_version=legacy --C++14 $(DEFINES) $(INCLUDES)
+CFLAGS := $(WOLFSSL_OPT) $(DEFINES) $(INCLUDES) $(RELEASE_OPT) -align8 -littleendian -preprocess_assembly_files -preprocess_special_assembly_files --preprocess_linker_directive_full -cpu=cortexa9 -dual_debug -paddr_offset=0 -Man -ga -e=GSBoot -ANSI --no_exceptions --slash_comment --disable_ctors_dtors -nostartfiles -malloc_version=legacy --C++14 -lnk=-nosegments_always_executable -lnk=-map_file_type=2
 
 OBJ_DIR := $(BUILD_DIR)/ghs/obj
 LIB_DIR := $(BUILD_DIR)/ghs/lib

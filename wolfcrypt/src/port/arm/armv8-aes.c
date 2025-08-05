@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
-//#include "wolfssl/options_178.h"
+/* #include "wolfssl/options_178.h" */
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 /*
@@ -123,86 +123,6 @@ int wc_AesSetIV(Aes* aes, const byte* iv)
     return 0;
 }
 
-#if defined(HAVE_AESCCM) || defined(WOLFSSL_AES_DIRECT)
-static int wc_AesEncrypt(Aes* aes, const byte* inBlock, byte* outBlock)
-{
-    if (aes->rounds != 10 && aes->rounds != 12 && aes->rounds != 14) {
-        WOLFSSL_ERROR_VERBOSE(KEYUSAGE_E);
-        return KEYUSAGE_E;
-    }
-
-#ifdef MAX3266X_CB /* Can do a basic ECB block */
-    #ifndef WOLF_CRYPTO_CB_FIND
-    if (aes->devId != INVALID_DEVID)
-    #endif
-    {
-        int ret_cb = wc_CryptoCb_AesEcbEncrypt(aes, outBlock, inBlock,
-                                            WC_AES_BLOCK_SIZE);
-        if (ret_cb != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE)) {
-            return ret_cb;
-        }
-        /* fall-through when unavailable */
-    }
-#endif
-
-    AES_ECB_encrypt(inBlock, outBlock, WC_AES_BLOCK_SIZE,
-        (const unsigned char*)aes->key, aes->rounds);
-    return 0;
-}
-#endif /* HAVE_AESCCM && WOLFSSL_AES_DIRECT */
-
-#if defined(HAVE_AES_DECRYPT) && defined(WOLFSSL_AES_DIRECT)
-static int wc_AesDecrypt(Aes* aes, const byte* inBlock, byte* outBlock)
-{
-    if (aes->rounds != 10 && aes->rounds != 12 && aes->rounds != 14) {
-        WOLFSSL_ERROR_VERBOSE(KEYUSAGE_E);
-        return KEYUSAGE_E;
-    }
-
-#ifdef MAX3266X_CB /* Can do a basic ECB block */
-    #ifndef WOLF_CRYPTO_CB_FIND
-    if (aes->devId != INVALID_DEVID)
-    #endif
-    {
-        int ret_cb = wc_CryptoCb_AesEcbDecrypt(aes, outBlock, inBlock,
-                                            WC_AES_BLOCK_SIZE);
-        if (ret_cb != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE))
-            return ret_cb;
-        /* fall-through when unavailable */
-    }
-#endif
-
-    AES_ECB_decrypt(inBlock, outBlock, WC_AES_BLOCK_SIZE,
-        (const unsigned char*)aes->key, aes->rounds);
-    return 0;
-}
-#endif /* HAVE_AES_DECRYPT && WOLFSSL_AES_DIRECT */
-
-/* AES-DIRECT */
-#if defined(WOLFSSL_AES_DIRECT)
-/* Allow direct access to one block encrypt */
-int wc_AesEncryptDirect(Aes* aes, byte* out, const byte* in)
-{
-    if (aes == NULL || out == NULL || in == NULL) {
-        WOLFSSL_MSG("Invalid input to wc_AesEncryptDirect");
-        return BAD_FUNC_ARG;
-    }
-    return wc_AesEncrypt(aes, in, out);
-}
-
-#ifdef HAVE_AES_DECRYPT
-/* Allow direct access to one block decrypt */
-int wc_AesDecryptDirect(Aes* aes, byte* out, const byte* in)
-{
-    if (aes == NULL || out == NULL || in == NULL) {
-        WOLFSSL_MSG("Invalid input to wc_AesDecryptDirect");
-        return BAD_FUNC_ARG;
-    }
-    return wc_AesDecrypt(aes, in, out);
-}
-#endif /* HAVE_AES_DECRYPT */
-#endif /* WOLFSSL_AES_DIRECT */
-
 #ifdef HAVE_AESGCM
 static WC_INLINE void RIGHTSHIFTX(byte* x)
 {
@@ -219,16 +139,6 @@ static WC_INLINE void RIGHTSHIFTX(byte* x)
 }
 
 #if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
-
-#if defined(__aarch64__) && !defined(BIG_ENDIAN_ORDER)
-static WC_INLINE void Shift4_M0(byte *r8, byte *z8)
-{
-    int i;
-    for (i = 15; i > 0; i--)
-        r8[i] = (byte)(z8[i-1] << 4) | (byte)(z8[i] >> 4);
-    r8[0] = (byte)(z8[0] >> 4);
-}
-#endif
 
 void GenerateM0(Gcm* gcm)
 {
