@@ -9,8 +9,8 @@ DEBUG_OPT := -G -Omaxdebug
 RELEASE_OPT := -Onone --no_debug
 WOLFSSL_OPT := --gnu_asm --diag_suppress=1546
 
-CC := /opt/ghs/comp_202354/ccarm
-AR := /opt/ghs/comp_202354/cxarm
+CC := /opt/ghs/v2019/comp_201914/ccarm
+AR := /opt/ghs/v2019/comp_201914/cxarm
 ARFLAGS := -archive
 
 CFLAGS := $(WOLFSSL_OPT) $(DEFINES) $(INCLUDES) $(RELEASE_OPT) -align8 -littleendian -preprocess_assembly_files -preprocess_special_assembly_files --preprocess_linker_directive_full -cpu=cortexa9 -dual_debug -paddr_offset=0 -Man -ga -e=GSBoot -ANSI --no_exceptions --slash_comment --disable_ctors_dtors -nostartfiles -malloc_version=legacy --C++14 -lnk=-nosegments_always_executable -lnk=-map_file_type=2

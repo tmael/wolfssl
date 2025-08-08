@@ -16,7 +16,7 @@ TOP_PROJECT := /home/tesfa/Workspace/GreenHills/Zynq/Zynq.gpj
 LD_SCRIPT_DIR := /home/tesfa/Workspace/GreenHills/Zynq/Projects/tgt
 LD_SCRIPT := $(LD_SCRIPT_DIR)/cpu0.ld
 
-CC := /opt/ghs/comp_202354/ccarm
+CC := /opt/ghs/v2019/comp_201914/ccarm
 CFLAGS := -MD -c99 --c++14 \
     --no_debug -Onone -dbg_source_root /home/tesfa/Software \
     -align8 -littleendian --preprocess_linker_directive_full \
