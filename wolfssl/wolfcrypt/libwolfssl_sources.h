@@ -40,6 +40,7 @@
 
 #include <wolfssl/wolfcrypt/types.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
-#include <wolfssl/wolfcrypt/logging.h>
-
+#if defined(DEBUG_WOLFSSL)
+    #include <wolfssl/wolfcrypt/logging.h>
+#endif
 #endif /* LIBWOLFSSL_SOURCES_H */
