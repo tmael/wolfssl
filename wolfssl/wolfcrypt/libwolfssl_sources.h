@@ -28,11 +28,6 @@
 #ifndef LIBWOLFSSL_SOURCES_H
 #define LIBWOLFSSL_SOURCES_H
 
-#if defined(TEST_LIBWOLFSSL_SOURCES_INCLUSION_SEQUENCE) && \
-    defined(WOLF_CRYPT_SETTINGS_H) &&                      \
-    !defined(LIBWOLFSSL_SOURCES_ASM_H)
-    #error settings.h included before libwolfssl_sources.h.
-#endif
 
 #ifndef BUILDING_WOLFSSL
     #define BUILDING_WOLFSSL

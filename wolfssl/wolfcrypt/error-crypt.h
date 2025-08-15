@@ -37,10 +37,6 @@ the error status.
     extern "C" {
 #endif
 
-#ifdef WOLFSSL_DEBUG_TRACE_ERROR_CODES_H
-#include <wolfssl/debug-untrace-error-codes.h>
-#endif
-
 /* error codes, add string for new errors !!! */
 enum wolfCrypt_ErrorCodes {
     /* note that WOLFSSL_FATAL_ERROR is defined as -1 in error-ssl.h, for

@@ -18,7 +18,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
-/* #include "wolfssl/options_178.h" */
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 /*
@@ -324,17 +323,14 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     /* sanity checks */
     if (aes == NULL || (iv == NULL && ivSz > 0) || (authTag == NULL) ||
             (authIn == NULL && authInSz > 0) || (ivSz == 0)) {
-        WOLFSSL_MSG("a NULL parameter passed in when size is larger than 0");
         return BAD_FUNC_ARG;
     }
 
     if (authTagSz < WOLFSSL_MIN_AUTH_TAG_SZ || authTagSz > WC_AES_BLOCK_SIZE) {
-        WOLFSSL_MSG("GcmEncrypt authTagSz error");
         return BAD_FUNC_ARG;
     }
 
     if (aes->rounds != 10 && aes->rounds != 12 && aes->rounds != 14) {
-        WOLFSSL_ERROR_VERBOSE(KEYUSAGE_E);
         return KEYUSAGE_E;
     }
     XMEMSET(initialCounter, 0, WC_AES_BLOCK_SIZE);
@@ -422,7 +418,6 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     if (aes == NULL || iv == NULL || (sz != 0 && (in == NULL || out == NULL)) ||
         authTag == NULL || authTagSz > WC_AES_BLOCK_SIZE || authTagSz == 0 ||
         ivSz == 0) {
-        WOLFSSL_MSG("a NULL parameter passed in when size is larger than 0");
         return BAD_FUNC_ARG;
     }
 

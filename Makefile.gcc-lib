@@ -2,12 +2,15 @@ SRC_DIR := $(CURDIR)
 BUILD_DIR := build
 INCLUDES := -I$(SRC_DIR)
 DEFINES := -DWOLFSSL_USER_SETTINGS -DWOLFSSL_ARMARCH=7 -DWOLFSSL_ARMASM_INLINE -DWOLFSSL_ARMASM_NO_HW_CRYPTO -DGCM_TABLE_4BIT
+# Force this user_settings.h to be included first by the compiler
+FORCE_US := -include $(SRC_DIR)/user_settings.h
+
 SRCS := $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-32-aes-asm_c.c \
         $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-aes.c
 
 CC := arm-linux-gnueabihf-gcc
 AR := arm-linux-gnueabihf-ar
-CFLAGS := -Wall -O2 -g -marm -march=armv7-a -mfloat-abi=hard -mfpu=neon $(DEFINES) $(INCLUDES)
+CFLAGS := -Wall -O2 -g -marm -march=armv7-a -mfloat-abi=hard -mfpu=neon $(DEFINES) $(INCLUDES) $(FORCE_US)
 
 OBJ_DIR := $(BUILD_DIR)/gcc/obj
 LIB_DIR := $(BUILD_DIR)/gcc/lib
