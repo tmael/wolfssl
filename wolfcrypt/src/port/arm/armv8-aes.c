@@ -40,7 +40,6 @@
 
 extern void AES_set_encrypt_key(const unsigned char* key, word32 len,
     unsigned char* ks);
-extern void AES_invert_key(unsigned char* ks, word32 rounds);
 extern void AES_ECB_encrypt(const unsigned char* in, unsigned char* out,
     unsigned long len, const unsigned char* ks, int nr);
 
@@ -97,9 +96,6 @@ int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
     }
 
 #ifdef HAVE_AES_DECRYPT
-    if (dir == AES_DECRYPTION) {
-        AES_invert_key((byte*)aes->key, aes->rounds);
-    }
 #else
     (void)dir;
 #endif
