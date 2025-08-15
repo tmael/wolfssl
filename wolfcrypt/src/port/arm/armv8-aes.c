@@ -19,7 +19,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
-
 /*
  * There are two versions one for 64 (Aarch64) and one for 32 bit (Aarch32).
  * If changing one check the other.
@@ -213,7 +212,7 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
         return BAD_FUNC_ARG;
     }
 
-    if ((len != 16) && (len != 24) && (len != 32)) {
+    if (len != 32) {
         return BAD_FUNC_ARG;
     }
 
