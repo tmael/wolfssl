@@ -28,9 +28,6 @@
 
 #include <wolfssl/wolfcrypt/aes.h>
 
-#ifndef WOLFSSL_ARMASM_NO_HW_CRYPTO
-#else /* !WOLFSSL_ARMASM_NO_HW_CRYPTO */
-
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
 #else
@@ -52,72 +49,23 @@ extern void GCM_gmult_len(byte* x, /* const */ byte m[32][WC_AES_BLOCK_SIZE],
 extern void AES_GCM_encrypt(const unsigned char* in, unsigned char* out,
     unsigned long len, const unsigned char* ks, int nr, unsigned char* ctr);
 
-#ifndef __aarch64__
-int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
+static int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
             const byte* iv, int dir)
 {
-#if defined(AES_MAX_KEY_SIZE)
-    const word32 max_key_len = (AES_MAX_KEY_SIZE / 8);
-    word32 userKey_aligned[AES_MAX_KEY_SIZE/WOLFSSL_BIT_SIZE/sizeof(word32)];
-#endif
-
-    if (((keylen != 16) && (keylen != 24) && (keylen != 32)) ||
+    if ((keylen != 32)  ||
            (aes == NULL) || (userKey == NULL)) {
         return BAD_FUNC_ARG;
     }
-
-#if defined(AES_MAX_KEY_SIZE)
-    /* Check key length */
-    if (keylen > max_key_len) {
-        return BAD_FUNC_ARG;
-    }
-#endif
-
-#if !defined(AES_MAX_KEY_SIZE)
     /* Check alignment */
     if ((unsigned long)userKey & (sizeof(aes->key[0]) - 1U)) {
         return BAD_FUNC_ARG;
     }
-#endif
+    aes->keylen = 32;
+    aes->rounds = 14;
 
-    aes->keylen = keylen;
-    aes->rounds = keylen/4 + 6;
-
-#if defined(AES_MAX_KEY_SIZE)
-    if ((unsigned long)userKey & (sizeof(aes->key[0]) - 1U)) {
-        XMEMCPY(userKey_aligned, userKey, keylen);
-        AES_set_encrypt_key((byte *)userKey_aligned, keylen * 8,
-                            (byte*)aes->key);
-    }
-    else
-#endif
-    {
-        AES_set_encrypt_key(userKey, keylen * 8, (byte*)aes->key);
-    }
-
-#ifdef HAVE_AES_DECRYPT
-#else
-    (void)dir;
-#endif
-
-    return wc_AesSetIV(aes, iv);
-}
-
-/* wc_AesSetIV is shared between software and hardware */
-int wc_AesSetIV(Aes* aes, const byte* iv)
-{
-    if (aes == NULL)
-        return BAD_FUNC_ARG;
-
-    if (iv)
-        XMEMCPY(aes->reg, iv, WC_AES_BLOCK_SIZE);
-    else
-        XMEMSET(aes->reg,  0, WC_AES_BLOCK_SIZE);
-
+    AES_set_encrypt_key(userKey, keylen * 8, (byte*)aes->key);
     return 0;
 }
-
-#ifdef HAVE_AESGCM
 static WC_INLINE void RIGHTSHIFTX(byte* x)
 {
     int i;
@@ -132,13 +80,9 @@ static WC_INLINE void RIGHTSHIFTX(byte* x)
     x[0] ^= borrow;
 }
 
-#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
-
 void GenerateM0(Gcm* gcm)
 {
-#if !defined(__aarch64__) || !defined(BIG_ENDIAN_ORDER)
     int i;
-#endif
     byte (*m)[WC_AES_BLOCK_SIZE] = gcm->M0;
 
     /* 0 times -> 0x0 */
@@ -197,7 +141,6 @@ void GenerateM0(Gcm* gcm)
     }
 #endif
 }
-#endif /* GCM_TABLE */
 
 int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
 {
@@ -243,13 +186,8 @@ static WC_INLINE void FlattenSzInBits(byte* buf, word32 sz)
     buf[7] = sz & 0xff;
 }
 
-#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
-    /* GCM_gmult_len implementation in armv8-32-aes-asm or thumb2-aes-asm */
-    #define GCM_GMULT_LEN(aes, x, a, len) GCM_gmult_len(x, aes->gcm.M0, a, len)
-#elif defined(GCM_SMALL)
-#else
-    #error ARMv8 AES only supports GCM_TABLE or GCM_TABLE_4BIT or GCM_SMALL
-#endif /* GCM_TABLE */
+/* GCM_gmult_len implementation in armv8-32-aes-asm_c.c */
+#define GCM_GMULT_LEN(aes, x, a, len) GCM_gmult_len(x, aes->gcm.M0, a, len)
 
 static void gcm_ghash_arm32(Aes* aes, const byte* a, word32 aSz, const byte* c,
     word32 cSz, byte* s, word32 sSz)
@@ -315,9 +253,13 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     byte x[WC_AES_BLOCK_SIZE];
     byte scratch[WC_AES_BLOCK_SIZE];
 
-    /* sanity checks */
+    /* argument checks */
+    /* If the sz is non-zero, both in and out must be set. If sz is 0,
+     * in and out are don't cares, as this is is the GMAC case. */
     if (aes == NULL || (iv == NULL && ivSz > 0) || (authTag == NULL) ||
-            (authIn == NULL && authInSz > 0) || (ivSz == 0)) {
+        (sz != 0 && (in == NULL || out == NULL)) ||
+        (authIn == NULL && authInSz > 0) || (ivSz == 0) ||
+         authTagSz > AES_BLOCK_SIZE) {
         return BAD_FUNC_ARG;
     }
 
@@ -409,7 +351,10 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     byte scratch[WC_AES_BLOCK_SIZE];
     byte x[WC_AES_BLOCK_SIZE];
 
-    /* sanity checks */
+    /* argument checks */
+    /* If the sz is non-zero, both in and out must be set. If sz is 0,
+     * in and out are don't cares, as this is is the GMAC case. */
+
     if (aes == NULL || iv == NULL || (sz != 0 && (in == NULL || out == NULL)) ||
         authTag == NULL || authTagSz > WC_AES_BLOCK_SIZE || authTagSz == 0 ||
         ivSz == 0) {
@@ -448,20 +393,23 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     /* do as many blocks as possible */
     if (blocks > 0) {
         GCM_GMULT_LEN(aes, x, in, blocks * WC_AES_BLOCK_SIZE);
-
-        AES_GCM_encrypt(in, out, blocks * WC_AES_BLOCK_SIZE,
-            (const unsigned char*)aes->key, aes->rounds, counter);
-        in += blocks * WC_AES_BLOCK_SIZE;
-        out += blocks * WC_AES_BLOCK_SIZE;
+        if (in != NULL  && out != NULL) {
+            AES_GCM_encrypt(in, out, blocks * WC_AES_BLOCK_SIZE,
+                (const unsigned char*)aes->key, aes->rounds, counter);
+            in += blocks * WC_AES_BLOCK_SIZE;
+            out += blocks * WC_AES_BLOCK_SIZE;
+        }
     }
     if (partial != 0) {
         XMEMSET(scratch, 0, WC_AES_BLOCK_SIZE);
-        XMEMCPY(scratch, in, partial);
+        if (in != NULL)
+            XMEMCPY(scratch, in, partial);
         GCM_GMULT_LEN(aes, x, scratch, WC_AES_BLOCK_SIZE);
-
-        AES_GCM_encrypt(in, scratch, WC_AES_BLOCK_SIZE,
-            (const unsigned char*)aes->key, aes->rounds, counter);
-        XMEMCPY(out, scratch, partial);
+        if (in != NULL  && out != NULL) {
+            AES_GCM_encrypt(in, scratch, WC_AES_BLOCK_SIZE,
+                (const unsigned char*)aes->key, aes->rounds, counter);
+            XMEMCPY(out, scratch, partial);
+        }
     }
 
     XMEMSET(scratch, 0, WC_AES_BLOCK_SIZE);
@@ -479,8 +427,4 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
     return 0;
 }
-#endif /* HAVE_AESGCM */
-#endif /* !__aarch64__ */
-
-#endif /* !WOLFSSL_ARMASM_NO_HW_CRYPTO */
 #endif /* !NO_AES && WOLFSSL_ARMASM */

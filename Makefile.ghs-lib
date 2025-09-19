@@ -1,34 +1,82 @@
-SRC_DIR := $(CURDIR)
+# -------- Portable GHS Makefile (Linux & Windows) --------
+# You can run this commands for Windows
+#make -f Makefile.ghs-lib CC="C:/ghs/comp_201914/ccarm.exe" AR="C:/ghs/comp_201914/cxarm.exe"
+#make -f Makefile.ghs-lib BUILD=debug CC="C:/ghs/comp_201914/ccarm.exe" AR="C:/ghs/comp_201914/cxarm.exe"
+
+# in Linux, use
+# make -f Makefile.ghs-lib CC=/opt/ghs/v2019/comp_201914/ccarm AR=/opt/ghs/v2019/comp_201914/cxarm clean
+
+# OS helpers
+MKDIR_P := mkdir -p
+ifeq ($(OS),Windows_NT)
+    ifeq ($(SHELL),cmd.exe)
+        RM_RF := rmdir /S /Q
+    else
+        RM_RF := rm -rf
+    endif
+else
+    RM_RF := rm -rf
+endif
+
+# ---- Project layout (relative paths) ----
+SRC_DIR   := .
 BUILD_DIR := build
-INCLUDES := -I$(SRC_DIR)
-DEFINES := -DWOLFSSL_USER_SETTINGS -DWOLFSSL_ARMARCH=7 -DWOLFSSL_ARMASM_INLINE -DWOLFSSL_ARMASM_NO_HW_CRYPTO -DGCM_TABLE_4BIT
+INCLUDES  := -I$(SRC_DIR)
+DEFINES   := -DWOLFSSL_USER_SETTINGS
+
 SRCS := $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-32-aes-asm_c.c \
         $(SRC_DIR)/wolfcrypt/src/port/arm/armv8-aes.c
 
-DEBUG_OPT := -G -Omaxdebug
+# ---- Build mode (choose: release|debug) ----
+BUILD ?= release
+DEBUG_OPT   := -G -Omaxdebug
 RELEASE_OPT := -Onone --no_debug
-WOLFSSL_OPT := --gnu_asm --diag_suppress=1546
+ifeq ($(BUILD),debug)
+    OPT := $(DEBUG_OPT)
+else
+    OPT := $(RELEASE_OPT)
+endif
 
-CC := /opt/ghs/v2019/comp_201914/ccarm
-AR := /opt/ghs/v2019/comp_201914/cxarm
+# ---- Toolchain (override on CLI for Windows paths) ----
+# Linux defaults:
+CC ?= ccarm
+AR ?= cxarm
 ARFLAGS := -archive
 
-CFLAGS := $(WOLFSSL_OPT) $(DEFINES) $(INCLUDES) $(RELEASE_OPT) -align8 -littleendian -preprocess_assembly_files -preprocess_special_assembly_files --preprocess_linker_directive_full -cpu=cortexa9 -dual_debug -paddr_offset=0 -Man -ga -e=GSBoot -ANSI --no_exceptions --slash_comment --disable_ctors_dtors -nostartfiles -malloc_version=legacy --C++14 -lnk=-nosegments_always_executable -lnk=-map_file_type=2
+# Core flags
+WOLFSSL_OPT := --gnu_asm --diag_suppress=1546
+CFLAGS := $(WOLFSSL_OPT) $(DEFINES) $(INCLUDES) $(OPT) \
+          -align8 -littleendian -preprocess_assembly_files -preprocess_special_assembly_files \
+          --preprocess_linker_directive_full -cpu=cortexa9 -dual_debug -paddr_offset=0 \
+          -Man -ga -e=GSBoot -ANSI --no_exceptions --slash_comment --disable_ctors_dtors \
+          -nostartfiles -malloc_version=legacy --C++14 \
+          -lnk=-nosegments_always_executable -lnk=-map_file_type=2
 
+# ---- Outputs ----
 OBJ_DIR := $(BUILD_DIR)/ghs/obj
 LIB_DIR := $(BUILD_DIR)/ghs/lib
-OBJS := $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-LIB := $(LIB_DIR)/libwolfcrypt.a
+OBJS    := $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+LIB     := $(LIB_DIR)/libwolfcrypt.a
+
+.PHONY: all clean print-vars
 
 all: $(LIB)
 
 $(LIB): $(OBJS)
-	mkdir -p $(LIB_DIR)
+	@$(MKDIR_P) $(LIB_DIR)
 	$(AR) $(ARFLAGS) -o $@ $^
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(dir $@)
+	@$(MKDIR_P) $(dir $@)
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	rm -rf $(BUILD_DIR)/ghs
+	-$(RM_RF) $(BUILD_DIR)
+
+print-vars:
+	@echo OS=$(OS)
+	@echo BUILD=$(BUILD)
+	@echo CC=$(CC)
+	@echo AR=$(AR)
+	@echo OBJ_DIR=$(OBJ_DIR)
+	@echo LIB=$(LIB)

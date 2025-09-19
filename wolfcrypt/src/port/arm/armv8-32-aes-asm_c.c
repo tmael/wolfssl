@@ -133,11 +133,7 @@ void AES_set_encrypt_key(const unsigned char* key, word32 len,
     unsigned char* ks)
 {
     register word32* L_AES_ARM32_te_c = (word32*)L_AES_ARM32_te;
-
     register word32* L_AES_ARM32_rcon_c = (word32*)&L_AES_ARM32_rcon;
-
-    if (key == NULL || !(len == 32))
-        return;
 
     __asm__ __volatile__ (
         "mov	r8, %[L_AES_ARM32_te]\n\t"
