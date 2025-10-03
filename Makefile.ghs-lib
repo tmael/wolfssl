@@ -44,7 +44,7 @@ AR ?= cxarm
 ARFLAGS := -archive
 
 # Core flags
-WOLFSSL_OPT := --gnu_asm --diag_suppress=1546
+WOLFSSL_OPT := --gnu_asm
 CFLAGS := $(WOLFSSL_OPT) $(DEFINES) $(INCLUDES) $(OPT) \
           -align8 -littleendian -preprocess_assembly_files -preprocess_special_assembly_files \
           --preprocess_linker_directive_full -cpu=cortexa9 -dual_debug -paddr_offset=0 \
