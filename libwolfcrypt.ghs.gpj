@@ -1,0 +1,30 @@
+#!gbuild
+
+#Example
+#Linux
+#/opt/ghs/v2019/comp_201914/gbuild  -commands -cfg=rel -top /media/data/home/tesfa/customers/bpmi_lab/SCSW6N881/Workspace/GreenHills/Zynq/Zynq.gpj -all
+
+
+# ---- Macros ----
+# By default point to HOME-based dirs. Override with -macro if needed.
+#macro HOME           = C:/cygwin64/home/tesfa   # Windows host example
+macro HOME               = /home/tesfa
+macro SDK_DIR            = $(HOME)/SCSW6N881
+macro WOLFSSL_DIR        = $(HOME)/wolfssl
+
+[Library]
+    {optgroup=GhsCommonOptions} -o Lib/libwolfcrypt.a
+
+    # Include paths
+    -I$(SDK_DIR)/Software/Zynq/BSP/inc
+    -I$(SDK_DIR)/Software/Zynq/BSP
+    -I$(SDK_DIR)/Software/Zynq/test_app
+    -I$(WOLFSSL_DIR)
+
+    -DWOLFSSL_USER_SETTINGS
+    --gnu_asm
+    #--diag_suppress=1546
+
+# Sources
+$(WOLFSSL_DIR)/wolfcrypt/src/port/arm/armv8-32-aes-asm_c.c
+$(WOLFSSL_DIR)/wolfcrypt/src/port/arm/armv8-aes.c
