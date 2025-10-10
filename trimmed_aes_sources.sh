@@ -40,6 +40,7 @@ root_makefiles=(
   "Makefile.ghs-lib"
   "Makefile.gcc-app"
   "Makefile.ghs-app"
+  "libwolfcrypt.ghs.gpj"
 )
 
 # === Helpers ===
