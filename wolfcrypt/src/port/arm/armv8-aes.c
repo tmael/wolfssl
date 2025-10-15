@@ -52,14 +52,6 @@ extern void AES_GCM_encrypt(const unsigned char* in, unsigned char* out,
 static int wc_AesSetKey(Aes* aes, const byte* userKey, word32 keylen,
             const byte* iv, int dir)
 {
-    if ((keylen != 32)  ||
-           (aes == NULL) || (userKey == NULL)) {
-        return BAD_FUNC_ARG;
-    }
-    /* Check alignment */
-    if ((unsigned long)userKey & (sizeof(aes->key[0]) - 1U)) {
-        return BAD_FUNC_ARG;
-    }
     aes->keylen = 32;
     aes->rounds = 14;
 
@@ -135,10 +127,6 @@ void GenerateM0(Gcm* gcm)
         m32[2] = ByteReverseWord32(m32[2]);
         m32[3] = ByteReverseWord32(m32[3]);
     }
-#elif !defined(BIG_ENDIAN_ORDER)
-    for (i = 0; i < 16; i++) {
-        Shift4_M0(m[16+i], m[i]);
-    }
 #endif
 }
 
@@ -147,11 +135,16 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
     int  ret;
     byte iv[WC_AES_BLOCK_SIZE];
 
-    if (aes == NULL) {
+    if (key == NULL || aes == NULL) {
         return BAD_FUNC_ARG;
     }
 
     if (len != 32) {
+        return BAD_FUNC_ARG;
+    }
+
+    /* Check alignment */
+    if ((unsigned long)userKey & (sizeof(aes->key[0]) - 1U)) {
         return BAD_FUNC_ARG;
     }
 
@@ -195,10 +188,6 @@ static void gcm_ghash_arm32(Aes* aes, const byte* a, word32 aSz, const byte* c,
     byte x[WC_AES_BLOCK_SIZE];
     byte scratch[WC_AES_BLOCK_SIZE];
     word32 blocks, partial;
-
-    if (aes == NULL) {
-        return;
-    }
 
     XMEMSET(x, 0, WC_AES_BLOCK_SIZE);
 
@@ -267,7 +256,7 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
         return BAD_FUNC_ARG;
     }
 
-    if (aes->rounds != 10 && aes->rounds != 12 && aes->rounds != 14) {
+    if (aes->rounds != 14) {
         return KEYUSAGE_E;
     }
     XMEMSET(initialCounter, 0, WC_AES_BLOCK_SIZE);
@@ -324,14 +313,8 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     FlattenSzInBits(&scratch[0], authInSz);
     FlattenSzInBits(&scratch[8], sz);
     GCM_GMULT_LEN(aes, x, scratch, WC_AES_BLOCK_SIZE);
-    if (authTagSz > WC_AES_BLOCK_SIZE) {
-        XMEMCPY(authTag, x, WC_AES_BLOCK_SIZE);
-    }
-    else {
-        /* authTagSz can be smaller than WC_AES_BLOCK_SIZE */
-        XMEMCPY(authTag, x, authTagSz);
-    }
-
+    /* authTagSz can be smaller than WC_AES_BLOCK_SIZE */
+    XMEMCPY(authTag, x, authTagSz);
     /* Auth tag calculation. */
     AES_ECB_encrypt(initialCounter, scratch, WC_AES_BLOCK_SIZE,
         (const unsigned char*)aes->key, aes->rounds);
@@ -357,6 +340,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
     if (aes == NULL || iv == NULL || (sz != 0 && (in == NULL || out == NULL)) ||
         authTag == NULL || authTagSz > WC_AES_BLOCK_SIZE || authTagSz == 0 ||
+        authTagSz < WC_MIN_AUTH_TAG_SZ ||
         ivSz == 0) {
         return BAD_FUNC_ARG;
     }
