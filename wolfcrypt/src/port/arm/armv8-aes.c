@@ -135,11 +135,7 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
     int  ret;
     byte iv[WC_AES_BLOCK_SIZE];
 
-    if (key == NULL || aes == NULL) {
-        return BAD_FUNC_ARG;
-    }
-
-    if (len != 32) {
+    if (aes == NULL || key == NULL || len != 32) {
         return BAD_FUNC_ARG;
     }
 
