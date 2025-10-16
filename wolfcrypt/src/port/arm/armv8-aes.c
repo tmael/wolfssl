@@ -140,7 +140,7 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
     }
 
     /* Check alignment */
-    if ((unsigned long)userKey & (sizeof(aes->key[0]) - 1U)) {
+    if ((unsigned long)key & (sizeof(aes->key[0]) - 1U)) {
         return BAD_FUNC_ARG;
     }
 
@@ -336,7 +336,7 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
 
     if (aes == NULL || iv == NULL || (sz != 0 && (in == NULL || out == NULL)) ||
         authTag == NULL || authTagSz > WC_AES_BLOCK_SIZE || authTagSz == 0 ||
-        authTagSz < WC_MIN_AUTH_TAG_SZ ||
+        authTagSz < WOLFSSL_MIN_AUTH_TAG_SZ ||
         ivSz == 0) {
         return BAD_FUNC_ARG;
     }
