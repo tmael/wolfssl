@@ -99,10 +99,6 @@ struct Aes {
     ALIGN16 word32 key[60];
     word32  rounds;
     int     keylen;
-
-    ALIGN16 word32 reg[WC_AES_BLOCK_SIZE / sizeof(word32)];      /* for CBC mode */
-    ALIGN16 word32 tmp[WC_AES_BLOCK_SIZE / sizeof(word32)];      /* same         */
-
 #if defined(HAVE_AESGCM) || defined(HAVE_AESCCM)
     word32 invokeCtr[2];
     word32 nonceSz;
