@@ -28,12 +28,8 @@
 
 #include <wolfssl/wolfcrypt/aes.h>
 
-#ifdef NO_INLINE
-    #include <wolfssl/wolfcrypt/misc.h>
-#else
-    #define WOLFSSL_MISC_INCLUDED
-    #include <wolfcrypt/src/misc.c>
-#endif
+#include <wolfcrypt/src/misc.c>
+
 
 extern void AES_set_encrypt_key(const unsigned char* key, word32 len,
     unsigned char* ks);
