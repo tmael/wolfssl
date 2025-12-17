@@ -27,7 +27,7 @@
 #if !defined(NO_AES) && defined(WOLFSSL_ARMASM)
 
 #include <wolfssl/wolfcrypt/aes.h>
-
+#define WOLFSSL_MISC_INCLUDED
 #include <wolfcrypt/src/misc.c>
 
 
