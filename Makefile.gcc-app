@@ -3,7 +3,7 @@ BUILD_DIR := build
 INCLUDES := -I$(SRC_DIR)
 DEFINES := -DWOLFSSL_USER_SETTINGS -DWOLFSSL_ARMARCH=7 -DWOLFSSL_ARMASM_INLINE -DWOLFSSL_ARMASM_NO_HW_CRYPTO -DGCM_TABLE_4BIT
 
-APP_SRC := $(SRC_DIR)/aesgcm-test.c
+APP_SRC := $(SRC_DIR)/aesgcm-test_interface.c
 OBJ_DIR := $(BUILD_DIR)/gcc/app/obj
 OUT_DIR := $(BUILD_DIR)/gcc/app/out
 APP_OBJ := $(OBJ_DIR)/aesgcm-test.o
