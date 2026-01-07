@@ -36,6 +36,8 @@ keep_files=(
 # Plus these root-level makefiles
 root_makefiles=(
   "aesgcm-test.c"
+  "test_vectors/gcm_vectors.c"
+  "test_vectors/gcm_vectors.h"
   "Makefile.gcc-lib"
   "Makefile.ghs-lib"
   "Makefile.gcc-app"
