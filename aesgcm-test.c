@@ -1,67 +1,106 @@
 #include <stdio.h>
 #include <string.h>
 #include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/aes.h>
+#include "test_vectors/gcm_vectors.h"
+#include "test_vectors/gcm_vectors.c"
 
-int main(void) {
+#ifdef HAVE_CUSTOMBOARD_GPC3
+#include <zTestPort.h>
+#include <ztimer.h>
+#include <zapitype.h>
+#endif
+
+#define MAX_CT_LEN 128
+
+int main(void)
+{
+
     int ret;
-    Aes aes;
-    byte key[32] = {
-        0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
-        0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
-        0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7,
-        0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4
-    };
-    byte iv[12] = { 
-        0xca, 0xfe, 0xba, 0xbe, 0xfa, 0xce, 
-        0xdb, 0xad, 0xde, 0xca, 0xf8, 0x88 
-    };
-    byte aad[20] = {
-        0xfe, 0xed, 0xfa, 0xce, 0xde, 0xad, 0xbe, 0xef,
-        0xfe, 0xed, 0xfa, 0xce, 0xde, 0xad, 0xbe, 0xef,
-        0xab, 0xad, 0xda, 0xd2
-    };
-    byte plaintext[64] = {
-        0xd9, 0x31, 0x32, 0x25, 0xf8, 0x84, 0x06, 0xe5,
-        0xa5, 0x59, 0x09, 0xc5, 0xaf, 0xf5, 0x26, 0x9a,
-        0x86, 0xa7, 0xa9, 0x53, 0x15, 0x34, 0xf7, 0xda,
-        0x2e, 0x4c, 0x30, 0x3d, 0x8a, 0x31, 0x8a, 0x72,
-        0x1c, 0x3c, 0x0c, 0x95, 0x95, 0x68, 0x09, 0x53,
-        0x2f, 0xcf, 0x0e, 0x24, 0x49, 0xa6, 0xb5, 0x25,
-        0xb1, 0x6a, 0xed, 0xf5, 0xaa, 0x0d, 0xe6, 0x57,
-        0xba, 0x63, 0x7b, 0x39, 0x1a, 0xaf, 0xd2, 0x55
-    };
-    byte ciphertext[64];
-    byte decrypted[64];
-    byte tag[16];
+    int tp_passed = 1;
+    int comp_ret;
 
-    ret = wc_AesGcmSetKey(&aes, key, sizeof(key));
-    if (ret != 0) {
-        printf("wc_AesGcmSetKey failed: %d\n", ret);
-        return -1;
-    }
+    static int executed_count = 0;
+    static int passed_count = 0;
+    static int dec_executed_count = 0;
+    static int dec_passed_count = 0;
 
-    ret = wc_AesGcmEncrypt(&aes, ciphertext, plaintext, sizeof(plaintext),
-                           iv, sizeof(iv), tag, sizeof(tag), aad, sizeof(aad));
-    if (ret != 0) {
-        printf("wc_AesGcmEncrypt failed: %d\n", ret);
-        return -1;
-    }
+    static Aes aes __attribute__((aligned(4)));
+    static byte ciphertext[MAX_CT_LEN] __attribute__((aligned(4)));
+    static byte plaintext[MAX_CT_LEN] __attribute__((aligned(4)));
+    static byte obs_tag[MAX_CT_LEN] __attribute__((aligned(4)));
 
-    printf("AES-GCM Encryption successful.\n");
+#ifdef HAVE_CUSTOMBOARD_GPC3
+    BSPTimestamp aulStart;
+    BSPMicrosecondCount auiElapsed;
 
-    ret = wc_AesGcmDecrypt(&aes, decrypted, ciphertext, sizeof(ciphertext),
-                           iv, sizeof(iv), tag, sizeof(tag), aad, sizeof(aad));
-    if (ret != 0) {
-        printf("wc_AesGcmDecrypt failed: %d\n", ret);
-        return -1;
-    }
+    BSPTestPortInitialize();
+    aulStart = BSPTimestampGetCurrentTime( );
 
-    if (memcmp(plaintext, decrypted, sizeof(plaintext)) == 0) {
-        printf("AES-GCM Decryption successful. Match verified.\n");
-        return 0;
-    } else {
-        printf("AES-GCM Decryption failed. Mismatch detected.\n");
-        return -1;
+    auiElapsed = BSPTimestampGetElapsedMicroseconds( aulStart );
+
+    (void)auiElapsed;
+    printf("Entering aesgcm-test.c \n");
+#endif
+    for (int i = gcm_vectors_count-1; i > gcm_vectors_count - 52; i--)
+    {
+
+        printf("\r\n ---- Vector %d ---- \r\n", i);
+
+        const gcm_tv_t *tv = &gcm_vectors[i];
+
+        printf("key addr %p", &tv->key);
+        printf("aes addr %p", &aes);
+
+        ret = wc_AesGcmSetKey(&aes, tv->key, tv->key_len);
+        if (ret != 0)
+        {
+            printf("AES GCM key not set correctly, error code: %d\r\n", ret);
+        }
+        else
+        {
+            printf("\r\nAES GCM key set did not return any error.\r\n");
+        }
+
+        /* Encryption Part */
+
+        executed_count++;
+
+        ret = wc_AesGcmEncrypt(&aes, ciphertext, tv->pt, tv->pt_len,
+                               tv->iv, tv->iv_len, obs_tag, tv->tag_len, tv->aad, tv->aad_len);
+
+        if (ret != 0)
+        {
+            printf("AES GCM encryption failed, return error: %d\r\n", ret);
+        }
+
+        printf("\r\nObtained ciphertext\r\n");
+        for (int j = 0; j < tv->pt_len; j++)
+        {
+            printf("%x", ciphertext[j]);
+        }
+        printf("\r\nExpected ciphertext\r\n");
+        for (int j = 0; j < tv->pt_len; j++)
+        {
+            printf("%x", tv->ct[j]);
+        }
+
+        /* Decryption part */
+
+        dec_executed_count++;
+        ret = wc_AesGcmDecrypt(&aes, plaintext, tv->ct, tv->ct_len,
+                               tv->iv, tv->iv_len, tv->tag, tv->tag_len, tv->aad, tv->aad_len);
+
+        printf("\r\nObtained plaintext\r\n");
+        for (int j = 0; j < tv->pt_len; j++)
+        {
+            printf("%x", plaintext[j]);
+        }
+        printf("\r\nExpected plaintext\r\n");
+        for (int j = 0; j < tv->pt_len; j++)
+        {
+            printf("%x", tv->pt[j]);
+        }
     }
 }
