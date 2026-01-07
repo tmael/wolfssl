@@ -36,12 +36,10 @@ extern void AES_set_encrypt_key(const unsigned char* key, word32 len,
 extern void AES_ECB_encrypt(const unsigned char* in, unsigned char* out,
     unsigned long len, const unsigned char* ks, int nr);
 
-#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
 /* in pre-C2x C, constness conflicts for dimensioned arrays can't be resolved.
  */
 extern void GCM_gmult_len(byte* x, /* const */ byte m[32][WC_AES_BLOCK_SIZE],
     const unsigned char* data, unsigned long len);
-#endif
 extern void AES_GCM_encrypt(const unsigned char* in, unsigned char* out,
     unsigned long len, const unsigned char* ks, int nr, unsigned char* ctr);
 
@@ -115,7 +113,6 @@ void GenerateM0(Gcm* gcm)
     XMEMCPY(m[0xf], m[0x8], WC_AES_BLOCK_SIZE);
     xorbuf (m[0xf], m[0x7], WC_AES_BLOCK_SIZE);
 
-#ifndef __aarch64__
     for (i = 0; i < 16; i++) {
         word32* m32 = (word32*)gcm->M0[i];
         m32[0] = ByteReverseWord32(m32[0]);
@@ -123,7 +120,6 @@ void GenerateM0(Gcm* gcm)
         m32[2] = ByteReverseWord32(m32[2]);
         m32[3] = ByteReverseWord32(m32[3]);
     }
-#endif
 }
 
 int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
@@ -146,9 +142,7 @@ int wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len)
     if (ret == 0) {
         AES_ECB_encrypt(iv, aes->gcm.H, WC_AES_BLOCK_SIZE,
             (const unsigned char*)aes->key, aes->rounds);
-        #if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
             GenerateM0(&aes->gcm);
-        #endif /* GCM_TABLE */
     }
 
     return ret;

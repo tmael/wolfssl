@@ -42,9 +42,6 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
 #ifndef NO_AES
 #include <wolfssl/wolfcrypt/aes.h>
 
-#if defined(HAVE_AES_DECRYPT) || defined(HAVE_AES_CBC) || \
-    defined(HAVE_AESCCM) || defined(HAVE_AESGCM) || \
-    defined(WOLFSSL_AES_DIRECT) || defined(WOLFSSL_AES_COUNTER)
 static const word32 L_AES_ARM32_te_data[] = {
     0xa5c66363, 0x84f87c7c, 0x99ee7777, 0x8df67b7b,
     0x0dfff2f2, 0xbdd66b6b, 0xb1de6f6f, 0x5491c5c5,
@@ -111,15 +108,7 @@ static const word32 L_AES_ARM32_te_data[] = {
     0xc3824141, 0xb0299999, 0x775a2d2d, 0x111e0f0f,
     0xcb7bb0b0, 0xfca85454, 0xd66dbbbb, 0x3a2c1616,
 };
-
-#endif /* HAVE_AES_DECRYPT || HAVE_AES_CBC || HAVE_AESCCM || HAVE_AESGCM ||
-        * WOLFSSL_AES_DIRECT || WOLFSSL_AES_COUNTER */
-#if defined(HAVE_AES_DECRYPT) || defined(HAVE_AES_CBC) || \
-    defined(HAVE_AESCCM) || defined(HAVE_AESGCM) || \
-    defined(WOLFSSL_AES_DIRECT) || defined(WOLFSSL_AES_COUNTER)
 static const word32* L_AES_ARM32_te = L_AES_ARM32_te_data;
-#endif /* HAVE_AES_DECRYPT || HAVE_AES_CBC || HAVE_AESCCM || HAVE_AESGCM ||
-        * WOLFSSL_AES_DIRECT || WOLFSSL_AES_COUNTER */
 
 static const word32 L_AES_ARM32_rcon[] = {
     0x01000000, 0x02000000, 0x04000000, 0x08000000,
@@ -231,8 +220,6 @@ void AES_set_encrypt_key(const unsigned char* key, word32 len,
     );
 }
 
-#if defined(HAVE_AESCCM) || defined(HAVE_AESGCM) || \
-    defined(WOLFSSL_AES_DIRECT) || defined(WOLFSSL_AES_COUNTER)
 static const word32* L_AES_ARM32_te_ecb = L_AES_ARM32_te_data;
 void AES_ECB_encrypt(const unsigned char* in_p, unsigned char* out_p,
     unsigned long len_p, const unsigned char* ks_p, int nr_p);
@@ -492,9 +479,6 @@ void AES_ECB_encrypt(const unsigned char* in, unsigned char* out,
     );
 }
 
-#endif /* HAVE_AESCCM || HAVE_AESGCM || WOLFSSL_AES_DIRECT ||
-        * WOLFSSL_AES_COUNTER */
-#ifdef HAVE_AESGCM
 static const word32* L_AES_ARM32_te_ctr = L_AES_ARM32_te_data;
 static const word32 L_GCM_gmult_len_r[] = {
     0x00000000, 0x1c200000, 0x38400000, 0x24600000,
@@ -1349,7 +1333,6 @@ void AES_GCM_encrypt(const unsigned char* in, unsigned char* out,
     );
 }
 
-#endif /* HAVE_AESGCM */
 #endif /* !NO_AES */
 #endif /* !__aarch64__ && !WOLFSSL_ARMASM_THUMB2 */
 #endif /* WOLFSSL_ARMASM */

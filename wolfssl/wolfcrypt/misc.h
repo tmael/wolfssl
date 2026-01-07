@@ -50,4 +50,3 @@ masking and clearing memory logic.
 
 
 #endif /* WOLF_CRYPT_MISC_H */
-

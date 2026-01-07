@@ -73,25 +73,7 @@ masking and clearing memory logic.
 /* This routine performs a byte swap of 32-bit word value. */
 WC_STATIC WC_INLINE word32 ByteReverseWord32(word32 value)
 {
-#ifdef PPC_INTRINSICS
-    /* PPC: load reverse indexed instruction */
-    return (word32)__lwbrx(&value,0);
-#elif defined(__ICCARM__)
-    return (word32)__REV(value);
-#elif defined(KEIL_INTRINSICS)
-    return (word32)__rev(value);
-#elif defined(WOLF_ALLOW_BUILTIN) && \
-        defined(__GNUC_PREREQ) && __GNUC_PREREQ(4, 3)
-    return (word32)__builtin_bswap32(value);
-#elif defined(WOLFSSL_BYTESWAP32_ASM) && defined(__GNUC__) && \
-      defined(__aarch64__)
-    __asm__ volatile (
-        "REV32 %0, %0  \n"
-        : "+r" (value)
-        :
-    );
-    return value;
-#elif defined(WOLFSSL_BYTESWAP32_ASM) && defined(__GNUC__) && \
+#if defined(WOLFSSL_BYTESWAP32_ASM) && defined(__GNUC__) && \
       (defined(__thumb__) || defined(__arm__))
     __asm__ volatile (
         "REV %0, %0  \n"
@@ -99,12 +81,7 @@ WC_STATIC WC_INLINE word32 ByteReverseWord32(word32 value)
         :
     );
     return value;
-#elif defined(FAST_ROTATE)
-    /* 5 instructions with rotate instruction, 9 without */
-    return (rotrFixed(value, 8U) & 0xff00ff00) |
-           (rotlFixed(value, 8U) & 0x00ff00ff);
 #else
-    /* 6 instructions with rotate instruction, 8 without */
     value = ((value & 0xFF00FF00) >> 8) | ((value & 0x00FF00FF) << 8);
     return rotlFixed(value, 16U);
 #endif
@@ -129,30 +106,13 @@ WC_STATIC WC_INLINE word64 rotlFixed64(word64 x, word64 y)
     return (x << y) | (x >> (sizeof(y) * 8 - y));
 }
 
-#if !defined(HAVE_DO178) || !defined(WOLFSSL_ARMASM_NEON)
-/* This routine performs a right rotation of a given value of word64 type
-<x> by <y> and returns the result */
-WC_STATIC WC_INLINE word64 rotrFixed64(word64 x, word64 y)
-{
-    return (x >> y) | (x << (sizeof(y) * 8 - y));
-}
-#endif /* !HAVE_DO178 */
-/* This routine performs a byte swap */
-
 WC_STATIC WC_INLINE word64 ByteReverseWord64(word64 value)
 {
-#if defined(WOLF_ALLOW_BUILTIN) && defined(__GNUC_PREREQ) && __GNUC_PREREQ(4, 3)
-    return (word64)__builtin_bswap64(value);
-#elif defined(WOLFCRYPT_SLOW_WORD64)
-	return (word64)((word64)ByteReverseWord32((word32) value)) << 32 |
-                    (word64)ByteReverseWord32((word32)(value   >> 32));
-#else
 	value = ((value & W64LIT(0xFF00FF00FF00FF00)) >> 8) |
             ((value & W64LIT(0x00FF00FF00FF00FF)) << 8);
 	value = ((value & W64LIT(0xFFFF0000FFFF0000)) >> 16) |
             ((value & W64LIT(0x0000FFFF0000FFFF)) << 16);
 	return rotlFixed64(value, 32U);
-#endif
 }
 
 /*!
@@ -174,8 +134,6 @@ WC_STATIC WC_INLINE void ByteReverseWords64(word64* out, const word64* in,
 }
 
 #endif /* WORD64_AVAILABLE && !WOLFSSL_NO_WORD64_OPS */
-
-#ifndef WOLFSSL_NO_XOR_OPS
 /* This routine performs a bitwise XOR operation of <*r> and <*a> for <n> number
 of wolfssl_words, placing the result in <*r>. */
 WC_STATIC WC_INLINE void XorWords(wolfssl_word* r, const wolfssl_word* a, word32 n)
@@ -201,38 +159,14 @@ WC_STATIC WC_INLINE void xorbuf(void* buf, const void* mask, word32 count)
         for (i = 0; i < count; i++) b[i] ^= m[i];
     }
 }
-#endif
 
-#ifndef WOLFSSL_NO_FORCE_ZERO
-/* This routine fills the first len bytes of the memory area pointed by mem
-   with zeros. It ensures compiler optimizations doesn't skip it  */
 WC_STATIC WC_INLINE void ForceZero(const void* mem, word32 len)
 {
     volatile byte* z = (volatile byte*)mem;
 
-#if (defined(WOLFSSL_X86_64_BUILD) || defined(WOLFSSL_AARCH64_BUILD)) \
-            && defined(WORD64_AVAILABLE)
-    volatile word64* w;
-    #ifndef WOLFSSL_UNALIGNED_64BIT_ACCESS
-        word32 l = (sizeof(word64) - ((size_t)z & (sizeof(word64)-1))) &
-                                                             (sizeof(word64)-1);
-
-        if (len < l) l = len;
-        len -= l;
-        while (l--) *z++ = 0;
-    #endif
-    for (w = (volatile word64*)z; len >= sizeof(*w); len -= sizeof(*w))
-        *w++ = 0;
-    z = (volatile byte*)w;
-#endif
-
     while (len--) *z++ = 0;
 }
-#endif
 
-
-#ifndef WOLFSSL_NO_CONST_CMP
-/* check all length bytes for equality, return 0 on success */
 WC_STATIC WC_INLINE int ConstantCompare(const byte* a, const byte* b, int length)
 {
     int i;
@@ -244,26 +178,7 @@ WC_STATIC WC_INLINE int ConstantCompare(const byte* a, const byte* b, int length
 
     return compareSum;
 }
-#endif
 
-
-#ifndef WOLFSSL_HAVE_MIN
-    #define WOLFSSL_HAVE_MIN
-    /* returns the smaller of a and b */
-    WC_STATIC WC_INLINE word32 min(word32 a, word32 b)
-    {
-        return a > b ? b : a;
-    }
-#endif /* !WOLFSSL_HAVE_MIN */
-
-#if !defined(HAVE_DO178)
-/* This function converts a byte representing a decimal digit ('0' to '9') to its
- * corresponding integer value */
-WC_STATIC WC_INLINE word32 btoi(byte b)
-{
-    return (word32)(b - 0x30);
-}
-#endif /* !HAVE_DO178 */
 #undef WC_STATIC
 
 #endif /* !WOLFSSL_MISC_INCLUDED && !NO_INLINE */

@@ -36,31 +36,21 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
 
 #include <wolfssl/wolfcrypt/types.h>
 
-#if !defined(NO_AES) || defined(WOLFSSL_SM4)
+#ifndef NO_AES
+
 typedef struct Gcm {
     ALIGN16 byte H[16];
     ALIGN16 byte M0[32][16];
 } Gcm;
 
 WOLFSSL_LOCAL void GenerateM0(Gcm* gcm);
-#if !defined(__aarch64__) && defined(WOLFSSL_ARMASM)
-WOLFSSL_LOCAL void GMULT(byte* X, byte* Y);
-#endif
-WOLFSSL_LOCAL void GHASH(Gcm* gcm, const byte* a, word32 aSz, const byte* c,
-                         word32 cSz, byte* s, word32 sSz);
-#endif
 
-#ifndef NO_AES
-#ifndef WC_NO_RNG
-    #include <wolfssl/wolfcrypt/random.h>
-#endif
 #ifdef __cplusplus
     extern "C" {
 #endif
 
 #ifndef WOLFSSL_AES_KEY_SIZE_ENUM
 #define WOLFSSL_AES_KEY_SIZE_ENUM
-/* these are required for FIPS and non-FIPS */
 enum {
     AES_128_KEY_SIZE    = 16,  /* for 128 bit             */
     AES_192_KEY_SIZE    = 24,  /* for 192 bit             */
@@ -70,10 +60,6 @@ enum {
 };
 #endif
 
-/* avoid redefinition of structs */
-#if !defined(HAVE_FIPS) || \
-    (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2))
-
 enum {
     AES_ENC_TYPE   = WC_CIPHER_AES,   /* cipher unique type */
     AES_ENCRYPTION = 0,
@@ -82,13 +68,9 @@ enum {
     WC_AES_BLOCK_SIZE      = 16,
     #define AES_BLOCK_SIZE WC_AES_BLOCK_SIZE
 
-    KEYWRAP_BLOCK_SIZE  = 8,
-
     GCM_NONCE_MAX_SZ = 16, /* wolfCrypt's maximum nonce size allowed. */
     GCM_NONCE_MID_SZ = 12, /* The default nonce size for AES-GCM. */
     GCM_NONCE_MIN_SZ = 8,  /* wolfCrypt's minimum nonce size allowed. */
-    CCM_NONCE_MIN_SZ = 7,
-    CCM_NONCE_MAX_SZ = 13,
     CTR_SZ   = 4,
     AES_IV_FIXED_SZ = 4 WC_ENUM_TERMINATOR
     WOLF_ENUM_DUMMY_LAST_ELEMENT(AES)
@@ -99,11 +81,9 @@ struct Aes {
     ALIGN16 word32 key[60];
     word32  rounds;
     int     keylen;
-#if defined(HAVE_AESGCM) || defined(HAVE_AESCCM)
+#ifdef HAVE_AESGCM
     word32 invokeCtr[2];
     word32 nonceSz;
-#endif
-#ifdef HAVE_AESGCM
     Gcm gcm;
 #endif /* HAVE_AESGCM */
     void*  heap; /* memory hint to use */
@@ -113,20 +93,6 @@ struct Aes {
     typedef struct Aes Aes;
     #define WC_AES_TYPE_DEFINED
 #endif
-
-#ifdef HAVE_AESGCM
-struct Gmac {
-    Aes aes;
-};
-
-#ifndef WC_AESGCM_TYPE_DEFINED
-    typedef struct Gmac Gmac;
-    #define WC_AESGCM_TYPE_DEFINED
-#endif
-
-#endif /* HAVE_AESGCM */
-#endif /* HAVE_FIPS */
-
 
 #ifdef HAVE_AESGCM
  WOLFSSL_API int  wc_AesGcmSetKey(Aes* aes, const byte* key, word32 len);
