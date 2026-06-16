@@ -19062,6 +19062,113 @@ static wc_test_ret_t aesgcm_setiv_test(Aes* enc, Aes* dec)
     return ret;
 }
 
+/* DO-178: exercise the external-IV AES-256-GCM path (wc_AesGcmSetExtIV +
+ * wc_AesGcmEncrypt_ex) WITHOUT an RNG, so it runs under WC_NO_RNG where
+ * aesgcm_setiv_test() above is compiled out. Verifies SP 800-38D 8.2.1
+ * deterministic IV use: the emitted IV equals the caller-supplied external IV,
+ * the invocation counter advances it across calls (=> distinct ciphertext),
+ * the round-trip authenticates, and a tampered tag is rejected. */
+static wc_test_ret_t aesgcm_extiv_test(Aes* enc, Aes* dec)
+{
+    wc_test_ret_t ret = 0;
+#if defined(WOLFSSL_AES_256) && \
+    (!defined(HAVE_FIPS) || (defined(HAVE_FIPS_VERSION) && \
+        (HAVE_FIPS_VERSION >= 2))) && \
+    !defined(HAVE_SELFTEST)
+    WOLFSSL_SMALL_STACK_STATIC const byte k[] = {
+        0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+        0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+        0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+        0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f
+    };
+    WOLFSSL_SMALL_STACK_STATIC const byte iv[] = {
+        0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xab
+    };
+    WOLFSSL_SMALL_STACK_STATIC const byte aad[] = {
+        0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+        0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f
+    };
+    WOLFSSL_SMALL_STACK_STATIC const byte p[] = {
+        0x4c,0x4d,0x20,0x64,0x61,0x74,0x61,0x2d,
+        0x61,0x74,0x2d,0x72,0x65,0x73,0x74
+    };
+    byte c1[sizeof(p)], c2[sizeof(p)], pp[sizeof(p)];
+    byte t1[16], t2[16], ivOut1[12], ivOut2[12];
+
+    XMEMSET(ivOut1, 0, sizeof(ivOut1));
+    XMEMSET(ivOut2, 0, sizeof(ivOut2));
+
+    ret = wc_AesGcmSetKey(enc, k, (word32)sizeof(k));
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
+    /* external IV set by the caller (no RNG) */
+    ret = wc_AesGcmSetExtIV(enc, iv, (word32)sizeof(iv));
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
+    ret = wc_AesGcmEncrypt_ex(enc, c1, p, (word32)sizeof(p),
+                ivOut1, (word32)sizeof(ivOut1), t1, sizeof(t1),
+                aad, (word32)sizeof(aad));
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
+    /* emitted IV must equal the external IV that was set */
+    if (XMEMCMP(ivOut1, iv, sizeof(iv)) != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+
+    ret = wc_AesGcmEncrypt_ex(enc, c2, p, (word32)sizeof(p),
+                ivOut2, (word32)sizeof(ivOut2), t2, sizeof(t2),
+                aad, (word32)sizeof(aad));
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
+    /* invocation counter must advance the IV => distinct IV and ciphertext */
+    if (XMEMCMP(ivOut1, ivOut2, sizeof(ivOut1)) == 0)
+        ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+    if (XMEMCMP(c1, c2, sizeof(p)) == 0)
+        ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+
+#ifdef HAVE_AES_DECRYPT
+    ret = wc_AesGcmSetKey(dec, k, (word32)sizeof(k));
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+
+    XMEMSET(pp, 0, sizeof(pp));
+    ret = wc_AesGcmDecrypt(dec, pp, c1, (word32)sizeof(p),
+                ivOut1, (word32)sizeof(ivOut1), t1, sizeof(t1),
+                aad, (word32)sizeof(aad));
+    if (ret != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_EC(ret), out);
+    if (XMEMCMP(p, pp, sizeof(p)) != 0)
+        ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+
+    /* a tampered tag must be rejected */
+    {
+        byte bad[16];
+        XMEMCPY(bad, t1, sizeof(bad));
+        bad[0] ^= 0x01;
+        ret = wc_AesGcmDecrypt(dec, pp, c1, (word32)sizeof(p),
+                    ivOut1, (word32)sizeof(ivOut1), bad, sizeof(bad),
+                    aad, (word32)sizeof(aad));
+        if (ret == 0)
+            ERROR_OUT(WC_TEST_RET_ENC_NC, out);
+        ret = 0;
+    }
+#else
+    (void)dec;
+    (void)pp;
+#endif /* HAVE_AES_DECRYPT */
+
+  out:
+    ;
+#else
+    (void)enc;
+    (void)dec;
+#endif /* WOLFSSL_AES_256 && ... */
+    return ret;
+}
+
 static wc_test_ret_t aesgcm_stream_test(Aes* enc)
 {
     wc_test_ret_t ret = 0;
@@ -20290,6 +20397,10 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t aesgcm_test(void)
         ERROR_OUT(ret, out);
 
     ret = aesgcm_setiv_test(enc, dec);
+    if (ret != 0)
+        ERROR_OUT(ret, out);
+
+    ret = aesgcm_extiv_test(enc, dec);
     if (ret != 0)
         ERROR_OUT(ret, out);
 
