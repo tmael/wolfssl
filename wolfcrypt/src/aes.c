@@ -7687,7 +7687,9 @@ int wc_AesCbcEncrypt(Aes* aes, byte* out, const byte* in, word32 sz)
  * block counter during the encryption.
  */
 
-#if (defined(HAVE_AESGCM) && !defined(WC_NO_RNG)) || defined(HAVE_AESCCM)
+/* DO-178: IncCtr is used by wc_AesGcmEncrypt_ex, which is kept under WC_NO_RNG
+ * (see the AESGCM IV note below), so drop the !WC_NO_RNG condition. */
+#if defined(HAVE_AESGCM) || defined(HAVE_AESCCM)
 static WC_INLINE void IncCtr(byte* ctr, word32 ctrSz)
 {
     int i;
@@ -13071,8 +13073,13 @@ int wc_AesGcmDecryptFinal(Aes* aes, const byte* authTag, word32 authTagSz)
 
 /* Common to all, abstract functions that build off of lower level AESGCM
  * functions */
-#ifndef WC_NO_RNG
 
+/* DO-178: CheckAesGcmIvSize, wc_AesGcmSetExtIV and wc_AesGcmEncrypt_ex use no
+ * RNG, so the upstream WC_NO_RNG guard is split to keep them compiled. They give
+ * SP 800-38D 8.2.1 deterministic (external) IV AES-GCM without a wolfCrypt RNG
+ * (e.g. when the TPM supplies entropy). Inert for normal builds (WC_NO_RNG
+ * undefined). Only the true RNG users (wc_AesGcmSetIV, wc_Gmac) and wc_GmacVerify
+ * stay under WC_NO_RNG below. */
 static WARN_UNUSED_RESULT WC_INLINE int CheckAesGcmIvSize(int ivSz) {
     return (ivSz == GCM_NONCE_MIN_SZ ||
             ivSz == GCM_NONCE_MID_SZ ||
@@ -13106,6 +13113,7 @@ int wc_AesGcmSetExtIV(Aes* aes, const byte* iv, word32 ivSz)
 }
 
 
+#ifndef WC_NO_RNG
 int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
                    const byte* ivFixed, word32 ivFixedSz,
                    WC_RNG* rng)
@@ -13142,6 +13150,7 @@ int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
 
     return ret;
 }
+#endif /* WC_NO_RNG */
 
 
 int wc_AesGcmEncrypt_ex(Aes* aes, byte* out, const byte* in, word32 sz,
@@ -13180,6 +13189,7 @@ int wc_AesGcmEncrypt_ex(Aes* aes, byte* out, const byte* in, word32 sz,
     return ret;
 }
 
+#ifndef WC_NO_RNG
 int wc_Gmac(const byte* key, word32 keySz, byte* iv, word32 ivSz,
             const byte* authIn, word32 authInSz,
             byte* authTag, word32 authTagSz, WC_RNG* rng)

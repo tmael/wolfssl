@@ -653,17 +653,19 @@ WOLFSSL_API WARN_UNUSED_RESULT int wc_AesGcmDecryptFinal(Aes* aes,
         const byte* authTag, word32 authTagSz);
 #endif
 
-#ifndef WC_NO_RNG
+ /* DO-178: wc_AesGcmSetExtIV / wc_AesGcmEncrypt_ex use no RNG; declared
+  * unconditionally to match their WC_NO_RNG-independent definitions. */
  WOLFSSL_API int  wc_AesGcmSetExtIV(Aes* aes, const byte* iv, word32 ivSz);
+#ifndef WC_NO_RNG
  WOLFSSL_API int  wc_AesGcmSetIV(Aes* aes, word32 ivSz,
                                    const byte* ivFixed, word32 ivFixedSz,
                                    WC_RNG* rng);
+#endif /* WC_NO_RNG */
  WOLFSSL_API int  wc_AesGcmEncrypt_ex(Aes* aes, byte* out,
                                    const byte* in, word32 sz,
                                    byte* ivOut, word32 ivOutSz,
                                    byte* authTag, word32 authTagSz,
                                    const byte* authIn, word32 authInSz);
-#endif /* WC_NO_RNG */
 
  WOLFSSL_API int wc_GmacSetKey(Gmac* gmac, const byte* key, word32 len);
  WOLFSSL_API int wc_GmacUpdate(Gmac* gmac, const byte* iv, word32 ivSz,
