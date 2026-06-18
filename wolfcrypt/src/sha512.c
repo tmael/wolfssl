@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-/* DO-178: SHA-512 build-options reference comment removed from cert source */
 #ifndef HAVE_DO178
+/* DO-178: SHA-512 build-options reference comment removed from cert source */
 /*
  * SHA-512/384 Build Options:
  *

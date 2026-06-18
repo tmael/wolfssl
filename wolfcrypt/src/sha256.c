@@ -40,8 +40,8 @@ on the specific device platform.
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
-/* DO-178: SHA256 build-options reference comment removed from cert source */
 #ifndef HAVE_DO178
+/* DO-178: SHA256 build-options reference comment removed from cert source */
 /*
  * SHA256 Build Options:
  * USE_SLOW_SHA256:            Reduces code size by not partially unrolling

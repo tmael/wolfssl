@@ -29,8 +29,8 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
 
 */
 
-/* DO-178: AES build-options reference comment removed from cert source */
 #ifndef HAVE_DO178
+/* DO-178: AES build-options reference comment removed from cert source */
 /*
  * AES Build Options:
  *

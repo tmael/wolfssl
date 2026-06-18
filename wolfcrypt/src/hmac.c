@@ -20,8 +20,8 @@
  */
 
 
-/* DO-178: HMAC build-options reference comment removed from cert source */
 #ifndef HAVE_DO178
+/* DO-178: HMAC build-options reference comment removed from cert source */
 /*
  * HMAC Build Options:
  *
