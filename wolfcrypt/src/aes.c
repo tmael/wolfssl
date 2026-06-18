@@ -29,6 +29,8 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
 
 */
 
+/* DO-178: AES build-options reference comment removed from cert source */
+#ifndef HAVE_DO178
 /*
  * AES Build Options:
  *
@@ -109,14 +111,17 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
  * WC_DEBUG_CIPHER_LIFECYCLE: Debug cipher init/free lifecycle     default: off
  * WOLFSSL_HW_METRICS:      Track hardware acceleration usage     default: off
  */
+#endif /* !HAVE_DO178 */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if !defined(NO_AES)
 
+#ifndef HAVE_DO178
 /* Tip: Locate the software cipher modes by searching for "Software AES" */
+#endif /* !HAVE_DO178 */
 
-#if FIPS_VERSION3_GE(2,0,0)
+#if FIPS_VERSION3_GE(2,0,0) && !defined(HAVE_DO178)
     /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
     #define FIPS_NO_WRAPPERS
 
