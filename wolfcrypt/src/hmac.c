@@ -20,6 +20,8 @@
  */
 
 
+/* DO-178: HMAC build-options reference comment removed from cert source */
+#ifndef HAVE_DO178
 /*
  * HMAC Build Options:
  *
@@ -34,6 +36,7 @@
  * WOLFSSL_DEVCRYPTO_HMAC:   /dev/crypto HMAC acceleration        default: off
  * WOLFSSL_KCAPI_HMAC:       Linux kernel crypto API for HMAC     default: off
  */
+#endif /* !HAVE_DO178 */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 

@@ -40,6 +40,8 @@ on the specific device platform.
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
+/* DO-178: SHA256 build-options reference comment removed from cert source */
+#ifndef HAVE_DO178
 /*
  * SHA256 Build Options:
  * USE_SLOW_SHA256:            Reduces code size by not partially unrolling
@@ -51,6 +53,7 @@ on the specific device platform.
  * SHA256_MANY_REGISTERS:      A SHA256 version that keeps all data in registers
                                 and partial unrolled (default OFF)
  */
+#endif /* !HAVE_DO178 */
 
 /* Default SHA256 to use Ch/Maj based on specification */
 #if !defined(WOLFSSL_SHA256_BY_SPEC) && !defined(WOLFSSL_SHA256_ALT_CH_MAJ)

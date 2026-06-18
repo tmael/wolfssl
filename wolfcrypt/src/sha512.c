@@ -19,6 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+/* DO-178: SHA-512 build-options reference comment removed from cert source */
+#ifndef HAVE_DO178
 /*
  * SHA-512/384 Build Options:
  *
@@ -53,6 +55,7 @@
  * PSOC6_HASH_SHA2:          PSoC6 hardware SHA-2                 default: off
  * WOLFSSL_RENESAS_RSIP:     Renesas RSIP SHA acceleration        default: off
  */
+#endif /* !HAVE_DO178 */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
