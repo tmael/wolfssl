@@ -43723,7 +43723,15 @@ WOLFSSL_TEST_SUBROUTINE wc_test_ret_t ecc_test_buffers(void)
     word32 idx = 0;
 #ifndef WC_NO_RNG
     /* pad our test message to 32 bytes so evenly divisible by AES_BLOCK_SZ */
+#if WC_MIN_DIGEST_SIZE > 31
+    /* No <=31-byte-digest hash (e.g. SHA-224) is enabled, so WC_MIN_DIGEST_SIZE is
+     * 32 (SHA-256): the upstream 31-byte fake hash would be rejected by
+     * wc_ecc_sign_hash (inlen < WC_MIN_DIGEST_SIZE). Use 32 bytes (also matches the
+     * "divisible by AES_BLOCK_SZ" note above). Gated so SHA-224 builds keep upstream. */
+    byte   in[] = "Everyone gets Friday off. ecc p2";
+#else
     byte   in[] = "Everyone gets Friday off. ecc p";
+#endif
     word32 inLen = (word32)XSTRLEN((char*)in);
     byte   out[256];
     byte   plain[256];
@@ -72500,7 +72508,15 @@ static wc_test_ret_t ecc_onlycb_test(myCryptoDevCtx *ctx)
     word32 keyIdx = 0;
 #endif
 #if defined(HAVE_ECC_SIGN) && defined(HAVE_ECC_VERIFY)
+#if WC_MIN_DIGEST_SIZE > 31
+    /* No <=31-byte-digest hash (e.g. SHA-224) is enabled, so WC_MIN_DIGEST_SIZE is
+     * 32 (SHA-256): the upstream 31-byte fake hash would be rejected by
+     * wc_ecc_sign_hash (inlen < WC_MIN_DIGEST_SIZE). Use 32 bytes (also matches the
+     * "divisible by AES_BLOCK_SZ" note above). Gated so SHA-224 builds keep upstream. */
+    byte   in[] = "Everyone gets Friday off. ecc p2";
+#else
     byte   in[] = "Everyone gets Friday off. ecc p";
+#endif
     word32 inLen = (word32)XSTRLEN((char*)in);
     word32 outLen;
     int    verify;
