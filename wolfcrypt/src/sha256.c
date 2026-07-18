@@ -42,6 +42,8 @@ on the specific device platform.
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
+#ifndef HAVE_DO178
+/* DO-178: SHA256 build-options reference comment removed from cert source */
 /*
  * SHA256 Build Options:
  * USE_SLOW_SHA256:            Reduces code size by not partially unrolling
@@ -53,6 +55,7 @@ on the specific device platform.
  * SHA256_MANY_REGISTERS:      A SHA256 version that keeps all data in registers
                                 and partial unrolled (default OFF)
  */
+#endif /* !HAVE_DO178 */
 
 /* Default SHA256 to use Ch/Maj based on specification */
 #if !defined(WOLFSSL_SHA256_BY_SPEC) && !defined(WOLFSSL_SHA256_ALT_CH_MAJ)
@@ -173,14 +176,6 @@ on the specific device platform.
     #include <wolfssl/wolfcrypt/port/nxp/se050_port.h>
 #endif
 
-#if FIPS_VERSION3_GE(6,0,0)
-    const unsigned int wolfCrypt_FIPS_sha256_ro_sanity[2] =
-                                                     { 0x1a2b3c4d, 0x00000014 };
-    int wolfCrypt_FIPS_SHA256_sanity(void)
-    {
-        return 0;
-    }
-#endif
 
 #if defined(WOLFSSL_X86_64_BUILD) && defined(USE_INTEL_SPEEDUP)
     #if defined(__GNUC__) && ((__GNUC__ < 4) || \

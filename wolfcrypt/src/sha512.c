@@ -19,6 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+#ifndef HAVE_DO178
+/* DO-178: SHA-512 build-options reference comment removed from cert source */
 /*
  * SHA-512/384 Build Options:
  *
@@ -53,6 +55,7 @@
  * PSOC6_HASH_SHA2:          PSoC6 hardware SHA-2                 default: off
  * WOLFSSL_RENESAS_RSIP:     Renesas RSIP SHA acceleration        default: off
  */
+#endif /* !HAVE_DO178 */
 
 #define _WC_BUILDING_SHA512_C
 
@@ -115,14 +118,6 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
-#if FIPS_VERSION3_GE(6,0,0)
-    const unsigned int wolfCrypt_FIPS_sha512_ro_sanity[2] =
-                                                     { 0x1a2b3c4d, 0x00000015 };
-    int wolfCrypt_FIPS_SHA512_sanity(void)
-    {
-        return 0;
-    }
-#endif
 
 
 #if defined(WOLFSSL_SE050) && defined(WOLFSSL_SE050_HASH)

@@ -20,6 +20,8 @@
  */
 
 
+#ifndef HAVE_DO178
+/* DO-178: HMAC build-options reference comment removed from cert source */
 /*
  * HMAC Build Options:
  *
@@ -34,6 +36,7 @@
  * WOLFSSL_DEVCRYPTO_HMAC:   /dev/crypto HMAC acceleration        default: off
  * WOLFSSL_KCAPI_HMAC:       Linux kernel crypto API for HMAC     default: off
  */
+#endif /* !HAVE_DO178 */
 
 #define _WC_BUILDING_HMAC_C
 
@@ -41,15 +44,6 @@
 
 #ifndef NO_HMAC
 
-#if FIPS_VERSION3_GE(2,0,0)
-    /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
-    #define FIPS_NO_WRAPPERS
-
-    #ifdef USE_WINDOWS_API
-        #pragma code_seg(".fipsA$g")
-        #pragma const_seg(".fipsB$g")
-    #endif
-#endif
 
 #include <wolfssl/wolfcrypt/hmac.h>
 
@@ -73,14 +67,6 @@
     #define wc_HmacFinal   wc_HmacFinal_Software
 #endif
 
-#if FIPS_VERSION3_GE(6,0,0)
-    const unsigned int wolfCrypt_FIPS_hmac_ro_sanity[2] =
-                                                     { 0x1a2b3c4d, 0x00000008 };
-    int wolfCrypt_FIPS_HMAC_sanity(void)
-    {
-        return 0;
-    }
-#endif
 
 int wc_HmacSizeByType(int type)
 {
@@ -1790,7 +1776,7 @@ int wolfSSL_GetHmacMaxSize(void)
 
         ret = wc_HmacInit(myHmac, heap, devId);
         if (ret == 0) {
-        #if FIPS_VERSION3_GE(6,0,0)
+        #if FIPS_VERSION3_GE(6,0,0) && !defined(HAVE_DO178)
             ret = wc_HmacSetKey_ex(myHmac, type, localSalt, saltSz,
                                    FIPS_ALLOW_SHORT);
         #else
@@ -1876,7 +1862,7 @@ int wolfSSL_GetHmacMaxSize(void)
             word32 tmpSz = (n == 1) ? 0 : hashSz;
             word32 left = outSz - outIdx;
 
-        #if FIPS_VERSION3_GE(6,0,0)
+        #if FIPS_VERSION3_GE(6,0,0) && !defined(HAVE_DO178)
             ret = wc_HmacSetKey_ex(myHmac, type, inKey, inKeySz,
                                    FIPS_ALLOW_SHORT);
         #else

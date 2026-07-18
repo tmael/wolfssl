@@ -29,6 +29,8 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
 
 */
 
+#ifndef HAVE_DO178
+/* DO-178: AES build-options reference comment removed from cert source */
 /*
  * AES Build Options:
  *
@@ -113,6 +115,7 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
  * WC_DEBUG_CIPHER_LIFECYCLE: Debug cipher init/free lifecycle     default: off
  * WOLFSSL_HW_METRICS:      Track hardware acceleration usage     default: off
  */
+#endif /* !HAVE_DO178 */
 
 #define _WC_BUILDING_AES_C
 
@@ -120,9 +123,11 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
 
 #if !defined(NO_AES)
 
+#ifndef HAVE_DO178
 /* Tip: Locate the software cipher modes by searching for "Software AES" */
+#endif /* !HAVE_DO178 */
 
-#if FIPS_VERSION3_GE(2,0,0)
+#if FIPS_VERSION3_GE(2,0,0) && !defined(HAVE_DO178)
     /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
     #define FIPS_NO_WRAPPERS
 
@@ -218,15 +223,6 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
     #pragma warning(disable: 4127)
 #endif
 
-#if (!defined(WOLFSSL_ARMASM) && FIPS_VERSION3_GE(6,0,0)) || \
-    FIPS_VERSION3_GE(7,0,0)
-    const unsigned int wolfCrypt_FIPS_aes_ro_sanity[2] =
-                                                     { 0x1a2b3c4d, 0x00000002 };
-    int wolfCrypt_FIPS_AES_sanity(void)
-    {
-        return 0;
-    }
-#endif
 
 /* Define AES implementation includes and functions */
 #if defined(STM32_CRYPTO) && !defined(WOLF_CRYPTO_CB_ONLY_AES)
@@ -8020,7 +8016,9 @@ int wc_AesCbcEncrypt(Aes* aes, byte* out, const byte* in, word32 sz)
  * block counter during the encryption.
  */
 
-#if (defined(HAVE_AESGCM) && !defined(WC_NO_RNG)) || defined(HAVE_AESCCM)
+/* DO-178: IncCtr is used by wc_AesGcmEncrypt_ex, which is kept under WC_NO_RNG
+ * (see the AESGCM IV note below), so drop the !WC_NO_RNG condition. */
+#if defined(HAVE_AESGCM) || defined(HAVE_AESCCM)
 static WC_INLINE void IncCtr(byte* ctr, word32 ctrSz)
 {
     int i;
@@ -14371,8 +14369,13 @@ int wc_AesGcmDecryptFinal(Aes* aes, const byte* authTag, word32 authTagSz)
 
 /* Common to all, abstract functions that build off of lower level AESGCM
  * functions */
-#ifndef WC_NO_RNG
 
+/* DO-178: CheckAesGcmIvSize, wc_AesGcmSetExtIV and wc_AesGcmEncrypt_ex use no
+ * RNG, so the upstream WC_NO_RNG guard is split to keep them compiled. They give
+ * SP 800-38D 8.2.1 deterministic (external) IV AES-GCM without a wolfCrypt RNG
+ * (e.g. when the TPM supplies entropy). Inert for normal builds (WC_NO_RNG
+ * undefined). Only the true RNG users (wc_AesGcmSetIV, wc_Gmac) and wc_GmacVerify
+ * stay under WC_NO_RNG below. */
 static WARN_UNUSED_RESULT WC_INLINE int CheckAesGcmIvSize(int ivSz) {
     return (ivSz == GCM_NONCE_MIN_SZ ||
             ivSz == GCM_NONCE_MID_SZ ||
@@ -14406,6 +14409,7 @@ int wc_AesGcmSetExtIV(Aes* aes, const byte* iv, word32 ivSz)
 }
 
 
+#ifndef WC_NO_RNG
 int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
                    const byte* ivFixed, word32 ivFixedSz,
                    WC_RNG* rng)
@@ -14442,6 +14446,7 @@ int wc_AesGcmSetIV(Aes* aes, word32 ivSz,
 
     return ret;
 }
+#endif /* WC_NO_RNG */
 
 
 int wc_AesGcmEncrypt_ex(Aes* aes, byte* out, const byte* in, word32 sz,
@@ -14480,6 +14485,7 @@ int wc_AesGcmEncrypt_ex(Aes* aes, byte* out, const byte* in, word32 sz,
     return ret;
 }
 
+#ifndef WC_NO_RNG
 int wc_Gmac(const byte* key, word32 keySz, byte* iv, word32 ivSz,
             const byte* authIn, word32 authInSz,
             byte* authTag, word32 authTagSz, WC_RNG* rng)
